@@ -3,7 +3,7 @@ import EditProfileForm from '../../Components/EditProfileComponent/EditProfileFo
 
 const EditProfilePage = () => {
   return (
-    <div className='py-10 px-5 lg:px-60'>
+    <div className="py-10 px-4 md:px-8 lg:px-24 overflow-x-hidden">
         <EditProfileForm/>
     </div>
   )

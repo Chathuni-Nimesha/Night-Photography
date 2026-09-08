@@ -38,13 +38,11 @@ public class UserUserDetailService implements UserDetailsService {
 			
 			List<GrantedAuthority> authorities=new ArrayList<>();
 			
-			System.out.println("errrrr ----------- "+ username);
-			
 			return new User(user.getEmail(), user.getPassword(), authorities);
 		}
 		
 			
-			throw new BadCredentialsException("Bad Credential"+ username);
+			throw new BadCredentialsException("Invalid username or password");
 		
 	}
 

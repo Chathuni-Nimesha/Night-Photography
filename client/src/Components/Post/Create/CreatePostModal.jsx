@@ -1,43 +1,40 @@
 import {
   Modal,
   ModalBody,
-  ModalCloseButton,
   ModalContent,
-  ModalHeader,
   ModalOverlay,
 } from "@chakra-ui/modal";
-
+import { useToast } from "@chakra-ui/react";
 import React, { useState } from "react";
 import { FaPhotoVideo } from "react-icons/fa";
-import "./CreatePostModal.css";
 import { GoLocation } from "react-icons/go";
-import { GrEmoji } from "react-icons/gr";
-import { Button, IconButton } from "@chakra-ui/button";
 import { useDispatch, useSelector } from "react-redux";
 import { createPost } from "../../../Redux/Post/Action";
 import { uploadToCloudinary } from "../../../Config/UploadToCloudinary";
 import SpinnerCard from "../../Spinner/Spinner";
-import { ChevronLeftIcon, ChevronRightIcon } from "@chakra-ui/icons";
+import { getAuthToken } from "../../../Config/auth";
+import { isVideoUrl } from "../../../Config/media";
+import "./CreatePostModal.css";
 
-const CreatePostModal = ({ onOpen, isOpen, onClose }) => {
-  const [files, setFiles] = useState([]);
+const CreatePostModal = ({ isOpen, onClose }) => {
   const [isDragOver, setIsDragOver] = useState(false);
   const [uploadStatus, setUploadStatus] = useState("");
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
-  
-  const dispatch = useDispatch();
-  const token = localStorage.getItem("token");
-  const { user } = useSelector(store => store);
 
-  const [postData, setPostData] = useState({ 
-    mediaUrls: [], 
-    caption: '', 
-    location: "" 
+  const dispatch = useDispatch();
+  const token = getAuthToken();
+  const toast = useToast();
+  const { user } = useSelector((store) => store);
+
+  const [postData, setPostData] = useState({
+    mediaUrls: [],
+    caption: "",
+    location: "",
   });
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setPostData(prev => ({ ...prev, [name]: value }));
+    setPostData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleDrop = (event) => {
@@ -63,215 +60,245 @@ const CreatePostModal = ({ onOpen, isOpen, onClose }) => {
   };
 
   const handleFiles = async (files) => {
-    const validFiles = files.filter(file => 
-      file.type.startsWith("image/") || file.type.startsWith("video/")
+    const validFiles = files.filter(
+      (file) => file.type.startsWith("image/") || file.type.startsWith("video/")
     );
-    
+
     if (validFiles.length === 0) {
-      alert("Please select image or video files.");
+      setUploadStatus("error");
       return;
     }
 
     setUploadStatus("uploading");
     try {
-      const uploadPromises = validFiles.map(file => uploadToCloudinary(file));
+      const uploadPromises = validFiles.map((file) => uploadToCloudinary(file));
       const urls = await Promise.all(uploadPromises);
-      
-      setPostData(prev => ({
+      const next = urls.filter((url) => url);
+      if (next.length === 0) {
+        setUploadStatus("error");
+        return;
+      }
+
+      setPostData((prev) => ({
         ...prev,
-        mediaUrls: [...prev.mediaUrls, ...urls.filter(url => url)]
+        mediaUrls: [...prev.mediaUrls, ...next],
       }));
       setUploadStatus("uploaded");
     } catch (error) {
-      console.error("Upload failed:", error);
       setUploadStatus("error");
-      alert("Failed to upload files. Please try again.");
     }
-  };
-
-  const handleNextMedia = () => {
-    setCurrentMediaIndex(prev => 
-      prev === postData.mediaUrls.length - 1 ? 0 : prev + 1
-    );
-  };
-
-  const handlePrevMedia = () => {
-    setCurrentMediaIndex(prev => 
-      prev === 0 ? postData.mediaUrls.length - 1 : prev - 1
-    );
   };
 
   const handleSubmit = async () => {
     if (!token || postData.mediaUrls.length === 0) return;
-    
-    const data = {
-      jwt: token,
-      data: postData,
-    };
-    
-    dispatch(createPost(data));
-    handleClose();
+
+    const result = await dispatch(
+      createPost({
+        jwt: token,
+        data: postData,
+      })
+    );
+    if (result?.ok) {
+      toast({
+        title: "Frame published",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+      handleClose();
+    } else {
+      toast({
+        title: "Could not publish this frame",
+        status: "error",
+        duration: 4000,
+        isClosable: true,
+      });
+    }
   };
 
   const handleClose = () => {
     onClose();
-    setFiles([]);
     setIsDragOver(false);
-    setPostData({ mediaUrls: [], caption: '', location: "" });
+    setPostData({ mediaUrls: [], caption: "", location: "" });
     setUploadStatus("");
     setCurrentMediaIndex(0);
   };
 
-  const isVideo = (url) => {
-    return url.match(/\.(mp4|webm|ogg)$/i);
-  };
+  const current = postData.mediaUrls[currentMediaIndex];
 
   return (
-    <div>
-      <Modal
-        size={"4xl"}
-        finalFocusRef={React.useRef(null)}
-        isOpen={isOpen}
-        onClose={handleClose}
+    <Modal size={"4xl"} isOpen={isOpen} onClose={handleClose} isCentered>
+      <ModalOverlay bg="rgba(7,8,10,0.86)" />
+      <ModalContent
+        bg="#12151C"
+        color="#F4F1EA"
+        border="1px solid rgba(255,255,255,0.08)"
+        borderRadius="2px"
+        mx="0.75rem"
+        maxW="min(56rem, calc(100vw - 1.5rem))"
+        overflow="hidden"
+        maxH="90vh"
       >
-        <ModalOverlay />
-        <ModalContent fontSize={"sm"}>
-          <div className="flex justify-between py-1 px-10 items-center">
-            <p>Create New Post</p>
-            <Button
-              onClick={handleSubmit}
-              className="inline-flex"
-              colorScheme="blue"
-              size={"sm"}
-              variant="ghost"
-              isDisabled={postData.mediaUrls.length === 0}
-            >
-              Share
-            </Button>
-          </div>
+        <div className="nl-create-top">
+          <p className="nl-serif">Share a frame</p>
+          <button
+            type="button"
+            className="nl-btn-primary"
+            onClick={handleSubmit}
+            disabled={postData.mediaUrls.length === 0}
+          >
+            Publish
+          </button>
+        </div>
 
-          <hr className="hrLine" />
-
-          <ModalBody>
-            <div className="modalBodyBox flex h-[70vh] justify-between">
-              <div className="w-[50%] flex flex-col justify-center items-center relative">
-                {uploadStatus === "" && (
-                  <div
-                    onDrop={handleDrop}
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    className={`drag-drop h-full ${isDragOver ? "border-blue-500" : ""}`}
-                  >
-                    <div className="flex justify-center flex-col items-center">
-                      <FaPhotoVideo className={`text-3xl ${isDragOver ? "text-blue-800" : ""}`} />
-                      <p>Drag photos or videos here</p>
-                    </div>
-
-                    <label htmlFor="file-upload" className="custom-file-upload">
-                      Select from computer
-                    </label>
-                    <input
-                      type="file"
-                      id="file-upload"
-                      accept="image/*, video/*"
-                      multiple
-                      onChange={handleOnChange}
-                    />
-                  </div>
-                )}
-
-                {uploadStatus === "uploading" && <SpinnerCard />}
-
-                {uploadStatus === "uploaded" && (
-                  <div className="w-full h-full relative">
-                    {postData.mediaUrls.map((url, index) => (
-                      <div
-                        key={index}
-                        className={`absolute inset-0 flex items-center justify-center ${
-                          index === currentMediaIndex ? "block" : "hidden"
-                        }`}
-                      >
-                        {isVideo(url) ? (
-                          <video
-                            src={url}
-                            controls
-                            className="max-h-full max-w-full object-contain"
-                          />
-                        ) : (
-                          <img
-                            src={url}
-                            alt={`Media ${index + 1}`}
-                            className="max-h-full max-w-full object-contain"
-                          />
-                        )}
-                      </div>
-                    ))}
-
-                    {postData.mediaUrls.length > 1 && (
-                      <>
-                        {}
-                        <div className="absolute bottom-2 left-0 right-0 flex justify-center space-x-2">
-                          {postData.mediaUrls.map((_, index) => (
-                            <button
-                              key={index}
-                              onClick={() => setCurrentMediaIndex(index)}
-                              className={`w-2 h-2 rounded-full ${
-                                index === currentMediaIndex ? "bg-blue-500" : "bg-gray-300"
-                              }`}
-                              aria-label={`Go to media ${index + 1}`}
-                            />
-                          ))}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                )}
-              </div>
-              
-              <div className="w-[1px] border h-full"></div>
-              
-              <div className="w-[50%]">
-                <div className="flex items-center px-2">
-                  <img
-                    className="w-7 h-7 rounded-full"
-                    src={user?.reqUser?.image || "https://cdn.pixabay.com/photo/2023/02/28/03/42/ibex-7819817_640.jpg"}
-                    alt=""
-                  />
-                  <p className="font-semibold ml-4">{user?.reqUser?.username}</p>
-                </div>
-                <div className="px-2">
-                  <textarea
-                    className="captionInput"
-                    placeholder="Write a description..."
-                    name="caption"
-                    rows="8"
-                    value={postData.caption}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div className="flex justify-between px-2">
-                  <GrEmoji />
-                  <p className="opacity-70">{postData.caption?.length}/2,200</p>
-                </div>
-                <hr />
-                <div className="p-2 flex justify-between items-center">
+        <ModalBody p={0} overflowY="auto">
+          <div className="nl-create-layout">
+            <div className="nl-create-media">
+              {uploadStatus === "" && (
+                <div
+                  onDrop={handleDrop}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  className={`nl-create-drop ${isDragOver ? "is-over" : ""}`}
+                >
+                  <FaPhotoVideo className="text-3xl mb-3" aria-hidden="true" />
+                  <p>Drop a photograph or video here</p>
+                  <label htmlFor="nl-create-upload" className="nl-btn-ghost mt-4">
+                    Choose files
+                  </label>
                   <input
-                    className="locationInput"
-                    type="text"
-                    placeholder="Add Location"
-                    name="location"
-                    value={postData.location}
-                    onChange={handleInputChange}
+                    type="file"
+                    id="nl-create-upload"
+                    className="nl-create-file"
+                    accept="image/*,video/*"
+                    multiple
+                    onChange={handleOnChange}
                   />
-                  <GoLocation />
                 </div>
-                <hr />
+              )}
+
+              {uploadStatus === "uploading" && (
+                <div className="nl-create-drop">
+                  <SpinnerCard />
+                  <p className="mt-4">Uploading…</p>
+                </div>
+              )}
+
+              {uploadStatus === "error" && (
+                <div className="nl-create-drop">
+                  <p>The files could not be prepared. Try an image or video again.</p>
+                  <label htmlFor="nl-create-upload-retry" className="nl-btn-primary mt-4">
+                    Try again
+                  </label>
+                  <input
+                    type="file"
+                    id="nl-create-upload-retry"
+                    className="nl-create-file"
+                    accept="image/*,video/*"
+                    multiple
+                    onChange={handleOnChange}
+                  />
+                </div>
+              )}
+
+              {uploadStatus === "uploaded" && current && (
+                <div className="nl-create-preview">
+                  {isVideoUrl(current) ? (
+                    <video src={current} controls className="max-h-full max-w-full object-contain" />
+                  ) : (
+                    <img src={current} alt="Selected frame preview" />
+                  )}
+                  {postData.mediaUrls.length > 1 && (
+                    <>
+                      <button
+                        type="button"
+                        className="nl-media-nav prev"
+                        aria-label="Previous preview"
+                        onClick={() =>
+                          setCurrentMediaIndex((i) =>
+                            i === 0 ? postData.mediaUrls.length - 1 : i - 1
+                          )
+                        }
+                      >
+                        ‹
+                      </button>
+                      <button
+                        type="button"
+                        className="nl-media-nav next"
+                        aria-label="Next preview"
+                        onClick={() =>
+                          setCurrentMediaIndex((i) =>
+                            i === postData.mediaUrls.length - 1 ? 0 : i + 1
+                          )
+                        }
+                      >
+                        ›
+                      </button>
+                      <div className="nl-media-dots">
+                        {postData.mediaUrls.map((_, index) => (
+                          <button
+                            key={index}
+                            type="button"
+                            className={index === currentMediaIndex ? "is-active" : ""}
+                            aria-label={`Go to media ${index + 1}`}
+                            onClick={() => setCurrentMediaIndex(index)}
+                          />
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="nl-create-form">
+              <div className="nl-post-user mb-4">
+                <img
+                  className="nl-post-avatar"
+                  src={
+                    user?.reqUser?.image ||
+                    "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png"
+                  }
+                  alt={user?.reqUser?.username ? `${user.reqUser.username} profile` : "Your profile"}
+                />
+                <span className="nl-post-name">{user?.reqUser?.username}</span>
+              </div>
+
+              <label htmlFor="nl-create-caption" className="nl-label">
+                Caption
+              </label>
+              <textarea
+                id="nl-create-caption"
+                className="nl-input nl-create-caption"
+                placeholder="Describe the night…"
+                name="caption"
+                rows="6"
+                value={postData.caption}
+                onChange={handleInputChange}
+                maxLength={2200}
+              />
+              <p className="nl-create-count">{postData.caption?.length || 0}/2,200</p>
+
+              <label htmlFor="nl-create-location" className="nl-label">
+                Location
+              </label>
+              <div className="nl-create-location">
+                <input
+                  id="nl-create-location"
+                  className="nl-input"
+                  type="text"
+                  placeholder="Where was this made?"
+                  name="location"
+                  value={postData.location}
+                  onChange={handleInputChange}
+                />
+                <GoLocation aria-hidden="true" />
               </div>
             </div>
-          </ModalBody>
-        </ModalContent>
-      </Modal>
-    </div>
+          </div>
+        </ModalBody>
+      </ModalContent>
+    </Modal>
   );
 };
 

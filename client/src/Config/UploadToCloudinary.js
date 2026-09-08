@@ -1,28 +1,24 @@
+import { cloudinaryUploadUrl, getCloudinaryCloudName, getCloudinaryPreset } from "./cloudinary";
+
 export const uploadToCloudinary = async (file) => {
   if (!file) return null;
 
   try {
+    const isVideo = file.type.startsWith("video/");
     const data = new FormData();
     data.append("file", file);
-    
+    data.append("upload_preset", getCloudinaryPreset(isVideo));
+    data.append("cloud_name", getCloudinaryCloudName());
 
-    if (file.type.startsWith("video/")) {
-      data.append("upload_preset", "cloud_video_preset");
-    } else {
-      data.append("upload_preset", "cloud_upload_img");
-    }
-    
-    data.append("cloud_name", "daooobsqx");
-
-    const res = await fetch("https://api.cloudinary.com/v1_1/dvawjogg8/upload", {
+    const res = await fetch(cloudinaryUploadUrl(isVideo), {
       method: "POST",
       body: data,
     });
 
+    if (!res.ok) return null;
     const fileData = await res.json();
-    return fileData.url;
+    return fileData.url || null;
   } catch (error) {
-    console.error("Error uploading to cloudinary:", error);
     return null;
   }
 };

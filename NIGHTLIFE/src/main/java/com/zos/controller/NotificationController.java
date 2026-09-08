@@ -57,17 +57,21 @@ public class NotificationController {
 
     @PutMapping("/read/{notificationId}")
     public ResponseEntity<Notification> markAsRead(
-            @PathVariable Integer notificationId) throws NotificationException {
+            @PathVariable Integer notificationId,
+            @RequestHeader("Authorization") String token) throws NotificationException, UserException {
 
-        Notification notification = notificationService.markAsRead(notificationId);
+        User user = userService.findUserProfile(token);
+        Notification notification = notificationService.markAsRead(notificationId, user.getId());
         return new ResponseEntity<>(notification, HttpStatus.OK);
     }
 
     @DeleteMapping("/delete/{notificationId}")
     public ResponseEntity<MessageResponse> deleteNotification(
-            @PathVariable Integer notificationId) throws NotificationException {
+            @PathVariable Integer notificationId,
+            @RequestHeader("Authorization") String token) throws NotificationException, UserException {
 
-        notificationService.deleteNotification(notificationId);
+        User user = userService.findUserProfile(token);
+        notificationService.deleteNotification(notificationId, user.getId());
         MessageResponse res = new MessageResponse("Notification deleted successfully");
 
         return new ResponseEntity<>(res, HttpStatus.OK);

@@ -38,8 +38,6 @@ public class PostController {
     @PostMapping("/create")
     public ResponseEntity<Post> createPostHandler(@RequestBody Post post, @RequestHeader("Authorization") String token) throws UserException {
 
-        System.out.println("create post ---- " + post.getCaption());
-
         User user = userService.findUserProfile(token);
 
         Post createdPost = postService.createPost(post, user.getId());
@@ -60,7 +58,6 @@ public class PostController {
     @GetMapping("/following/{userIds}")
     public ResponseEntity<List<Post>> findAllPostByUserIds(@PathVariable("userIds") List<Integer> userIds) throws PostException, UserException {
 
-        System.out.println("post userIds ----- " + userIds);
         List<Post> posts = postService.findAllPostByUserIds(userIds);
 
         return new ResponseEntity<List<Post>>(posts, HttpStatus.OK);

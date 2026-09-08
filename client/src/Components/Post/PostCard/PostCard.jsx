@@ -1,16 +1,8 @@
-import { useDisclosure } from "@chakra-ui/react";
+import { useDisclosure, useToast } from "@chakra-ui/react";
 import React, { useEffect, useState } from "react";
 import { AiFillHeart, AiOutlineHeart } from "react-icons/ai";
-import { createNotificationAction } from "../../../Redux/Notification/Action"; 
-import {
-  BsBookmark,
-  BsBookmarkFill,
-  BsDot,
-  BsEmojiSmile,
-  BsThreeDots,
-} from "react-icons/bs";
+import { BsBookmark, BsBookmarkFill, BsThreeDots } from "react-icons/bs";
 import { FaRegComment } from "react-icons/fa";
-import { RiSendPlaneLine } from "react-icons/ri";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import {
@@ -19,6 +11,7 @@ import {
   isSavedPost,
   timeDifference,
 } from "../../../Config/Logic";
+import { getPostMedia, isVideoUrl, postAltText, optimizedMediaUrl } from "../../../Config/media";
 import { createComment } from "../../../Redux/Comment/Action";
 import {
   deletePostAction,
@@ -30,19 +23,12 @@ import {
 import CommentModal from "../../Comment/CommentModal";
 import "./PostCard.css";
 import EditPostModal from "../Create/EditPostModal";
-import { IconButton } from "@chakra-ui/react";
-import { ChevronLeftIcon, ChevronRightIcon } from "@chakra-ui/icons";
 
-const PostCard = ({
-  userProfileImage,
-  username,
-  location,
-  post,
-  createdAt,
-}) => {
-  const [commentContent, setCommentContent] = useState();
+const PostCard = ({ username, location, post }) => {
+  const [commentContent, setCommentContent] = useState("");
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const toast = useToast();
   const token = localStorage.getItem("token");
   const { user } = useSelector((store) => store);
   const [isSaved, setIsSaved] = useState(false);
@@ -51,319 +37,254 @@ const PostCard = ({
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [openEditPostModal, setOpenEditPostModal] = useState(false);
-
-  const handleCommentInputChange = (e) => {
-    setCommentContent(e.target.value);
-  };
-
   const [numberOfLikes, setNumberOfLike] = useState(0);
 
+  const media = getPostMedia(post);
   const data = {
     jwt: token,
     postId: post.id,
   };
 
   const handleAddComment = () => {
-    const data = {
-      jwt: token,
-      postId: post.id,
-      data: {
-        content: commentContent,
-      },
-    };
-    dispatch(createComment(data));
+    if (!commentContent?.trim()) return;
+    dispatch(
+      createComment({
+        jwt: token,
+        postId: post.id,
+        data: { content: commentContent },
+      })
+    );
     setCommentContent("");
-    
-    // Create notification for comment
-    if (post.user.id !== user.reqUser.id) { // Only create notification if not own post
-      const notification = {
-        message: `${user.reqUser.username} commented: ${commentContent}`,
-        type: "COMMENT",
-        postId: post.id
-      };
-      dispatch(createNotificationAction(notification, token));
-    }
-  };
-
-  const handleOnEnterPress = (e) => {
-    if (e.key === "Enter") {
-      handleAddComment();
-    }
   };
 
   const handleLikePost = () => {
     dispatch(likePostAction(data));
     setIsPostLiked(true);
     setNumberOfLike(numberOfLikes + 1);
-    
-  
-    if (post.user.id !== user.reqUser.id) { 
-      const notification = {
-        message: `${user.reqUser.username} liked your post`,
-        type: "LIKE",
-        postId: post.id
-      };
-      dispatch(createNotificationAction(notification, token));
-    }
   };
 
   const handleUnLikePost = () => {
     dispatch(unLikePostAction(data));
     setIsPostLiked(false);
-    setNumberOfLike(numberOfLikes - 1);
-  };
-
-  const handleSavePost = () => {
-    dispatch(savePostAction(data));
-    setIsSaved(true);
-  };
-
-  const handleUnSavePost = () => {
-    dispatch(unSavePostAction(data));
-    setIsSaved(false);
-  };
-
-  const handleNavigate = (username) => {
-    navigate(`/${username}`);
-  };
-
-  const handleNextMedia = () => {
-    setCurrentMediaIndex(prev => 
-      prev === post.mediaUrls.length - 1 ? 0 : prev + 1
-    );
-  };
-
-  const handlePrevMedia = () => {
-    setCurrentMediaIndex(prev => 
-      prev === 0 ? post.mediaUrls.length - 1 : prev - 1
-    );
-  };
-
-  const isVideo = (url) => {
-    return url.match(/\.(mp4|webm|ogg)$/i);
+    setNumberOfLike(Math.max(0, numberOfLikes - 1));
   };
 
   useEffect(() => {
     setIsSaved(isSavedPost(user.reqUser, post.id));
     setIsPostLiked(isPostLikedByUser(post, user.reqUser?.id));
-    setNumberOfLike(post?.likedByUsers?.length);
+    setNumberOfLike(post?.likedByUsers?.length || 0);
   }, [user.reqUser, post]);
 
-  const handleClick = () => {
-    setShowDropdown(!showDropdown);
-  };
-
-  const handleWindowClick = (event) => {
-    if (!event.target.matches(".dots")) {
-      setShowDropdown(false);
-    }
-  };
-
   useEffect(() => {
-    window.addEventListener("click", handleWindowClick);
-    return () => {
-      window.removeEventListener("click", handleWindowClick);
+    const handleWindowClick = (event) => {
+      if (!event.target.closest(".nl-post-menu")) setShowDropdown(false);
     };
+    window.addEventListener("click", handleWindowClick);
+    return () => window.removeEventListener("click", handleWindowClick);
   }, []);
 
-  const handleDeletePost = (postId) => {
-    const data = {
-      jwt: token,
-      postId,
-    };
-    dispatch(deletePostAction(data));
-  };
-
   const isOwnPost = isReqUserPost(post, user.reqUser);
-
-  const handleOpenCommentModal = () => {
-    navigate(`/p/${post.id}`);
-    onOpen();
-  };
-
-  const handleCloseEditPostModal = () => {
-    setOpenEditPostModal(false);
-  };
-
-  const handleOpenEditPostModal = () => {
-    setOpenEditPostModal(true);
-  };
+  const current = media[currentMediaIndex];
 
   return (
-    <div>
-      <div className="flex flex-col items-center w-full border rounded-md">
-        <div className="flex justify-between items-center w-full py-4 px-5">
-          <div className="flex items-center">
-            <img
-              className="w-12 h-12 rounded-full"
-              src={
-                post.user.userImage ||
-                "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png"
-              }
-              alt=""
-            />
-
-            <div className="pl-2">
-              <p className="font-semibold text-sm flex items-center">
-                <span
-                  onClick={() => handleNavigate(username)}
-                  className="cursor-pointer"
-                >
-                  {post?.user?.username}
-                </span>
-                <span className="opacity-50 flex items-center">
-                  <BsDot />
-                  {timeDifference(post?.createdAt)}
-                </span>
-              </p>
-              <p className="font-thin text-sm">{location}</p>
-            </div>
-          </div>
-          <div>
-            <div className="dropdown">
-              <BsThreeDots onClick={handleClick} className="dots" />
-              {isOwnPost && (
-                <div className="dropdown-content">
-                  {showDropdown && (
-                    <div className="p-2 w-[10rem] shadow-xl bg-white">
-                      <p
-                        onClick={handleOpenEditPostModal}
-                        className="hover:bg-slate-300 py-2 px-4 cursor-pointer font-semibold"
-                      >
-                        Edit
-                      </p>
-                      <hr />
-                      <p
-                        onClick={() => handleDeletePost(post.id)}
-                        className="hover:bg-slate-300 px-4 py-2 cursor-pointer font-semibold"
-                      >
-                        Delete
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* Media Slider Section */}
-        <div className="w-full relative">
-          {post.mediaUrls?.map((url, index) => (
-            <div
-              key={index}
-              className={`${index === currentMediaIndex ? "block" : "hidden"}`}
+    <article className="nl-post">
+      <header className="nl-post-header">
+        <button
+          type="button"
+          className="nl-post-user"
+          onClick={() => username && navigate(`/${username}`)}
+        >
+          <img
+            className="nl-post-avatar"
+            src={
+              optimizedMediaUrl(post.user?.userImage, { width: 96 }) ||
+              "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png"
+            }
+            alt={post?.user?.username ? `${post.user.username} profile` : "Photographer profile"}
+            loading="lazy"
+            decoding="async"
+            width="40"
+            height="40"
+          />
+          <span>
+            <span className="nl-post-name">{post?.user?.username}</span>
+            <span className="nl-post-time">{timeDifference(post?.createdAt)}</span>
+          </span>
+        </button>
+        {isOwnPost && (
+          <div className="nl-post-menu relative">
+            <button
+              type="button"
+              className="nl-icon-btn dots"
+              aria-label="Frame options"
+              aria-expanded={showDropdown}
+              onClick={() => setShowDropdown((open) => !open)}
             >
-              {isVideo(url) ? (
-                <video
-                  src={url}
-                  controls
-                  className="w-full"
-                />
-              ) : (
-                <img
-                  src={url}
-                  alt={`Post media ${index + 1}`}
-                  className="w-full"
-                />
-              )}
-            </div>
-          ))}
+              <BsThreeDots />
+            </button>
+            {showDropdown && (
+              <div className="nl-card absolute right-0 top-10 z-10 w-40 p-1">
+                <button
+                  type="button"
+                  className="nl-nav-item"
+                  onClick={() => {
+                    setOpenEditPostModal(true);
+                    setShowDropdown(false);
+                  }}
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  className="nl-nav-item"
+                  onClick={async () => {
+                    const result = await dispatch(deletePostAction({ jwt: token, postId: post.id }));
+                    toast({
+                      title: result?.ok ? "Frame deleted" : "Could not delete this frame",
+                      status: result?.ok ? "success" : "error",
+                      duration: 3000,
+                      isClosable: true,
+                    });
+                    setShowDropdown(false);
+                  }}
+                >
+                  Delete
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </header>
 
-          {post.mediaUrls?.length > 1 && (
+      {current && (
+        <div className="nl-post-media">
+          {isVideoUrl(current) ? (
+            <video src={current} controls preload="metadata" />
+          ) : (
+            <img
+              src={optimizedMediaUrl(current, { width: 1080 })}
+              alt={postAltText(post, currentMediaIndex)}
+              loading="lazy"
+              decoding="async"
+            />
+          )}
+          {media.length > 1 && (
             <>
-              {}
-              <div className="absolute bottom-2 left-0 right-0 flex justify-center space-x-2">
-                {post.mediaUrls?.map((_, index) => (
+              <button
+                type="button"
+                className="nl-media-nav prev"
+                aria-label="Previous media"
+                onClick={() =>
+                  setCurrentMediaIndex((i) => (i === 0 ? media.length - 1 : i - 1))
+                }
+              >
+                ‹
+              </button>
+              <button
+                type="button"
+                className="nl-media-nav next"
+                aria-label="Next media"
+                onClick={() =>
+                  setCurrentMediaIndex((i) => (i === media.length - 1 ? 0 : i + 1))
+                }
+              >
+                ›
+              </button>
+              <div className="nl-media-dots">
+                {media.map((_, index) => (
                   <button
                     key={index}
-                    onClick={() => setCurrentMediaIndex(index)}
-                    className={`w-2 h-2 rounded-full ${
-                      index === currentMediaIndex ? "bg-blue-500" : "bg-gray-300"
-                    }`}
+                    type="button"
+                    className={index === currentMediaIndex ? "is-active" : ""}
                     aria-label={`Go to media ${index + 1}`}
+                    onClick={() => setCurrentMediaIndex(index)}
                   />
                 ))}
               </div>
             </>
           )}
         </div>
+      )}
 
-        <div className="flex justify-between items-center w-full px-5 py-4">
-          <div className="flex items-center space-x-2">
-            {isPostLiked ? (
-              <AiFillHeart
-                onClick={handleUnLikePost}
-                className="text-2xl hover:opacity-50 cursor-pointer text-red-600"
-              />
-            ) : (
-              <AiOutlineHeart
-                onClick={handleLikePost}
-                className="text-2xl hover:opacity-50 cursor-pointer"
-              />
-            )}
-            <FaRegComment
-              onClick={handleOpenCommentModal}
-              className="text-xl hover:opacity-50 cursor-pointer"
-            />
-            <RiSendPlaneLine className="text-xl hover:opacity-50 cursor-pointer" />
-          </div>
-          <div className="cursor-pointer">
-            {isSaved ? (
-              <BsBookmarkFill
-                onClick={handleUnSavePost}
-                className="text-xl"
-              />
-            ) : (
-              <BsBookmark
-                onClick={handleSavePost}
-                className="text-xl hover:opacity-50 cursor-pointer"
-              />
-            )}
-          </div>
+      <div className="nl-post-body">
+        {post.caption && <p className="nl-post-caption">{post.caption}</p>}
+        {location && <p className="nl-post-location">{location}</p>}
+        <div className="nl-post-actions">
+          <button
+            type="button"
+            className={`nl-icon-btn ${isPostLiked ? "is-liked" : ""}`}
+            aria-label={isPostLiked ? "Unlike" : "Like"}
+            onClick={isPostLiked ? handleUnLikePost : handleLikePost}
+          >
+            {isPostLiked ? <AiFillHeart size={22} /> : <AiOutlineHeart size={22} />}
+          </button>
+          <button
+            type="button"
+            className="nl-icon-btn"
+            aria-label="Open comments"
+            onClick={() => {
+              navigate(`/p/${post.id}`);
+              onOpen();
+            }}
+          >
+            <FaRegComment size={20} />
+          </button>
+          <button
+            type="button"
+            className="nl-icon-btn nl-post-actions-end"
+            aria-label={isSaved ? "Unsave" : "Save"}
+            onClick={() => {
+              if (isSaved) {
+                dispatch(unSavePostAction(data));
+                setIsSaved(false);
+              } else {
+                dispatch(savePostAction(data));
+                setIsSaved(true);
+              }
+            }}
+          >
+            {isSaved ? <BsBookmarkFill size={20} /> : <BsBookmark size={20} />}
+          </button>
         </div>
-        <div className="w-full py-2 px-5">
-          {numberOfLikes > 0 && (
-            <p className="text-sm">{numberOfLikes} likes</p>
-          )}
-          <p className="py-2">
-            <span className="font-semibold">{post?.user?.username}</span> {post.caption}
-          </p>
-          {post?.comments?.length > 0 && (
-            <p
-              onClick={handleOpenCommentModal}
-              className="opacity-50 text-sm py-2 -z-0 cursor-pointer"
-            >
-              View all {post?.comments?.length} comments
-            </p>
-          )}
-        </div>
-        <div className="border border-t w-full">
-          <div className="w-full flex items-center px-5">
-            <BsEmojiSmile />
-            <input
-              onKeyPress={handleOnEnterPress}
-              onChange={handleCommentInputChange}
-              value={commentContent}
-              className="commentInput"
-              type="text"
-              placeholder="Add a comment..."
-            />
-          </div>
+        {numberOfLikes > 0 && <p className="nl-post-meta">{numberOfLikes} likes</p>}
+        {post?.comments?.length > 0 && (
+          <button
+            type="button"
+            className="nl-link mt-2"
+            onClick={() => {
+              navigate(`/p/${post.id}`);
+              onOpen();
+            }}
+          >
+            View {post.comments.length} comments
+          </button>
+        )}
+        <div className="nl-post-comment">
+          <label htmlFor={`comment-${post.id}`} className="sr-only">
+            Add a comment
+          </label>
+          <input
+            id={`comment-${post.id}`}
+            onKeyDown={(e) => e.key === "Enter" && handleAddComment()}
+            onChange={(e) => setCommentContent(e.target.value)}
+            value={commentContent}
+            type="text"
+            placeholder="Write a note…"
+          />
         </div>
       </div>
 
       <EditPostModal
-        onClose={handleCloseEditPostModal}
+        onClose={() => setOpenEditPostModal(false)}
         isOpen={openEditPostModal}
-        onOpen={handleOpenEditPostModal}
+        onOpen={() => setOpenEditPostModal(true)}
         post={post}
       />
 
       <CommentModal
         handleLikePost={handleLikePost}
-        handleSavePost={handleSavePost}
-        handleUnSavePost={handleUnSavePost}
+        handleSavePost={() => dispatch(savePostAction(data))}
+        handleUnSavePost={() => dispatch(unSavePostAction(data))}
         handleUnLikePost={handleUnLikePost}
         isPostLiked={isPostLiked}
         isSaved={isSaved}
@@ -372,7 +293,7 @@ const PostCard = ({
         onClose={onClose}
         onOpen={onOpen}
       />
-    </div>
+    </article>
   );
 };
 

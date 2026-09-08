@@ -1,4 +1,5 @@
 import { BASE_URL } from "../../Config/api";
+import { handleUnauthorized } from "../../Config/auth";
 import {
   CREATE_REEL_FAILURE,
   CREATE_REEL_REQUEST,
@@ -23,12 +24,11 @@ export const createReel = (data) => async (dispatch) => {
       body: JSON.stringify(data.reelData),
     });
 
+    if (handleUnauthorized(response)) return;
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || "Failed to create reel");
+      throw new Error("Could not publish that reel");
     }
     const responseData = await response.json();
-    console.log("created reel ", responseData);
     dispatch({
       type: CREATE_REEL_SUCCESS,
       payload: responseData,
@@ -54,9 +54,9 @@ export const deleteReel = (data) => async (dispatch) => {
         },
       }
     );
+    if (handleUnauthorized(response)) return;
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || "Failed to delete reel");
+      throw new Error("Could not delete that reel");
     }
     const responseData = await response.json();
     dispatch({
@@ -72,7 +72,6 @@ export const deleteReel = (data) => async (dispatch) => {
 };
 
 export const getAllReels = (jwt) => async (dispatch) => {
-  console.log("enter in get all reels ----------- ")
   dispatch({ type: GET_ALL_REELS_REQUEST });
   try {
     const response = await fetch(`${BASE_URL}/api/reels/`, {
@@ -82,13 +81,12 @@ export const getAllReels = (jwt) => async (dispatch) => {
         Authorization: "Bearer " + jwt,
       },
     });
+    if (handleUnauthorized(response)) return;
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(errorData.message || "Failed to get reels");
+      throw new Error("Could not load reels");
     }
     const responseData = await response.json();
 
-    console.log("all reels - ",responseData)
     dispatch({
       type: GET_ALL_REELS_SUCCESS,
       payload: responseData,

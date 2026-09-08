@@ -1,196 +1,163 @@
-body {
-  background-color: #fafafa;
-  font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
-  color: #262626;
-}
-
-/* Headings and layout */
-.learning_plan-header {
-  font-size: 2.25rem;
-  font-weight: 700;
-  color: #262626;
-}
-
-.ant-btn-primary {
-  background: linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
-  border: none;
-  color: white;
-  font-weight: 500;
-  border-radius: 1rem;
-  transition: all 0.3s ease;
-}
-
-.ant-btn-primary:hover {
-  opacity: 0.9;
-}
-
-.ant-card {
-  border: none;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
-  border-radius: 1rem;
-  transition: transform 0.2s ease;
-  background-color: #fff;
-}
-
-.ant-card:hover {
-  transform: translateY(-4px);
-}
-
-.ant-collapse > .ant-collapse-item > .ant-collapse-header {
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: #333;
-}
-
-.ant-tag {
-  font-size: 0.75rem;
-  border-radius: 1rem;
-  padding: 0.25rem 0.75rem;
-}
-
-.ant-tag-blue {
-  background-color: #4cb5f9;
-  color: white;
-}
-
-.ant-tag-orange {
-  background-color: #f77f00;
-  color: white;
-}
-
-.ant-tag-red {
-  background-color: #f44336;
-  color: white;
-}
-
-/* Input/Forms */
-.ant-input,
-.ant-textarea,
-.ant-picker {
-  border-radius: 0.75rem;
-  background-color: #fafafa;
-  border: 1px solid #dbdbdb;
-}
-
-.ant-modal {
-  border-radius: 1rem;
-  padding: 1.5rem;
-}
-
-/* Checkboxes */
-.ant-checkbox-inner {
-  border-radius: 4px;
-}
-
-/* Resource links */
-.resource-link {
-  color: #3897f0;
-  font-weight: 500;
-}
-
-/* Subtle hover animation */
-.ant-btn-icon-only {
-  border-radius: 50%;
-  transition: background 0.3s;
-}
-
-.ant-btn-icon-only:hover {
-  background-color: rgba(0, 0, 0, 0.05);
-}
-
-
-.header-bar {
-  background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
-  padding: 1rem;
-  color: white;
-  text-align: center;
-  font-size: 1.5rem;
-  font-weight: bold;
-  border-radius: 0 0 1rem 1rem;
-  margin-bottom: 2rem;
-}
-
-
-/* ===================== */
-/* 🌸 FORM CONTAINER 🌸  */
-/* ===================== */
-
-.ant-modal-content {
-  border-radius: 1.5rem;
-  padding: 2rem;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  background: white;
-}
-
-
-
-.ant-form-item-label > label {
-  font-size: 14px;
-  color: #555;
-  font-weight: 500;
-  margin-bottom: 0.25rem;
-}
-
-.ant-input,
-.ant-textarea,
-.ant-picker,
-.ant-select-selector {
-  background-color: #f8f9fa;
-  border: 1px solid #dbdbdb;
-  padding: 10px 14px;
-  border-radius: 1rem;
-  font-size: 14px;
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
-}
-
-.ant-input:focus,
-.ant-textarea:focus,
-.ant-picker-focused,
-.ant-select-focused {
-  border-color: #ef476f;
-  box-shadow: 0 0 0 2px rgba(239, 71, 111, 0.2);
-}
-
-
-
-.ant-picker {
+.nl-craft {
   width: 100%;
-  font-size: 14px;
-  padding: 10px 14px;
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+  overflow-x: hidden;
 }
 
-
-
-.ant-checkbox-wrapper {
-  font-size: 14px;
-  color: #444;
+.nl-craft-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.75rem;
 }
 
-.ant-checkbox-checked .ant-checkbox-inner {
-  background-color: #ef476f;
-  border-color: #ef476f;
+.nl-craft-header h1 {
+  margin: 0.15rem 0 0.4rem;
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: 500;
+  line-height: 1.15;
 }
 
-
-
-.ant-input-textarea {
-  padding: 10px 14px;
-  font-size: 14px;
+.nl-craft-header p {
+  margin: 0;
+  max-width: 36rem;
+  color: var(--nl-muted);
+  line-height: 1.65;
 }
 
-
-
-.ant-modal-footer .ant-btn-primary {
-  background: linear-gradient(to right, #f09433, #e6683c, #dc2743);
-  border: none;
-  border-radius: 2rem;
-  font-weight: bold;
-  padding: 0.5rem 1.25rem;
-  font-size: 14px;
+.nl-craft-status {
+  padding: 3.5rem 1rem;
+  text-align: center;
 }
 
-.ant-modal-footer .ant-btn-default {
-  border-radius: 2rem;
-  padding: 0.5rem 1.25rem;
-  font-size: 14px;
+.nl-craft-empty {
+  border: 1px dashed var(--nl-border);
+}
+
+.nl-craft .ant-collapse {
+  background: transparent !important;
+  border: 0 !important;
+}
+
+.nl-craft .ant-collapse-item {
+  margin-bottom: 0.75rem;
+  border: 1px solid var(--nl-border) !important;
+  border-radius: 2px !important;
+  overflow: hidden;
+}
+
+.nl-craft-plan-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.nl-craft-plan-title span {
+  color: var(--nl-text);
+  font-family: "Cormorant Garamond", serif;
+  font-size: 1.2rem;
+}
+
+.nl-craft-topic-card {
+  width: 100%;
+}
+
+.nl-craft-topic-card .ant-card-head {
+  border-color: var(--nl-border) !important;
+}
+
+.nl-craft-muted {
+  color: var(--nl-muted);
+  line-height: 1.6;
+}
+
+.nl-craft-link {
+  color: var(--nl-accent);
+  word-break: break-word;
+}
+
+.nl-craft-link:hover {
+  color: #d4b27c;
+}
+
+.nl-craft-selected {
+  margin-top: 1.5rem;
+  padding: 1.25rem;
+}
+
+.nl-craft-selected h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1.7rem;
+  font-weight: 500;
+}
+
+.nl-craft-count {
+  margin: 0 0 0.75rem;
+  color: var(--nl-muted);
+  font-size: 0.9rem;
+}
+
+.nl-craft-bar {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.nl-craft-bar span {
+  display: block;
+  height: 100%;
+  background: var(--nl-accent);
+}
+
+.nl-craft-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.nl-craft-section-head h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 500;
+}
+
+.nl-craft-inline-empty {
+  padding: 1.5rem 1rem;
+  text-align: center;
+  border: 1px dashed var(--nl-border);
+}
+
+.nl-craft-resource {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+@media (max-width: 640px) {
+  .nl-craft-header .ant-btn,
+  .nl-craft-section-head .ant-btn {
+    width: 100%;
+  }
+
+  .nl-craft .ant-collapse-extra {
+    margin-top: 0.5rem;
+  }
+
+  .nl-craft .ant-space {
+    flex-wrap: wrap;
+  }
 }

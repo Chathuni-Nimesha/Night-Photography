@@ -1,6 +1,7 @@
 package com.zos.services;
 
 import com.zos.dto.UserDto;
+import com.zos.exception.ForbiddenException;
 import com.zos.exception.NotificationException;
 import com.zos.exception.UserException;
 import com.zos.model.Notification;
@@ -45,20 +46,27 @@ public class NotificationServiceImplementation implements NotificationService {
     }
 
     @Override
-    public Notification markAsRead(Integer notificationId) throws NotificationException {
+    public Notification markAsRead(Integer notificationId, Integer userId) throws NotificationException {
         Notification notification = notificationRepo.findById(notificationId)
                 .orElseThrow(() -> new NotificationException("Notification not found"));
-
+        assertNotificationOwner(notification, userId);
         notification.setRead(true);
         return notificationRepo.save(notification);
     }
 
     @Override
-    public void deleteNotification(Integer notificationId) throws NotificationException {
-        if (!notificationRepo.existsById(notificationId)) {
-            throw new NotificationException("Notification not found");
-        }
+    public void deleteNotification(Integer notificationId, Integer userId) throws NotificationException {
+        Notification notification = notificationRepo.findById(notificationId)
+                .orElseThrow(() -> new NotificationException("Notification not found"));
+        assertNotificationOwner(notification, userId);
         notificationRepo.deleteById(notificationId);
+    }
+
+    private void assertNotificationOwner(Notification notification, Integer userId) {
+        Integer ownerId = notification.getUser() != null ? notification.getUser().getId() : null;
+        if (ownerId == null || userId == null || !ownerId.equals(userId)) {
+            throw new ForbiddenException("You cannot change this notification.");
+        }
     }
 
     @Override

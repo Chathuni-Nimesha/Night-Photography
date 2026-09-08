@@ -1,10 +1,12 @@
 package com.zos.exception;
 
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -71,13 +73,28 @@ public class GlobleException {
         return new ResponseEntity<ErrorDetails>(err, HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorDetails> httpMessageNotReadableExceptionHandler(HttpMessageNotReadableException ex, WebRequest req) {
+        ErrorDetails err = new ErrorDetails("Invalid request body", req.getDescription(false), LocalDateTime.now());
+        return new ResponseEntity<ErrorDetails>(err, HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<ErrorDetails> ForbiddenExceptionHandler(ForbiddenException ex, WebRequest req) {
+        ErrorDetails err = new ErrorDetails(ex.getMessage(), "forbidden", LocalDateTime.now());
+        return new ResponseEntity<ErrorDetails>(err, HttpStatus.FORBIDDEN);
+    }
+
+    @ExceptionHandler({BadCredentialsException.class, AuthenticationException.class})
+    public ResponseEntity<ErrorDetails> authenticationExceptionHandler(AuthenticationException ex, WebRequest req) {
+        ErrorDetails err = new ErrorDetails("Invalid username or password", "unauthorized", LocalDateTime.now());
+        return new ResponseEntity<ErrorDetails>(err, HttpStatus.UNAUTHORIZED);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorDetails> OtherExceptionHandler(Exception ue, WebRequest req) {
-
-        ErrorDetails err = new ErrorDetails(ue.getMessage(), req.getDescription(false), LocalDateTime.now());
-
-        return new ResponseEntity<ErrorDetails>(err, HttpStatus.BAD_REQUEST);
-
+        ErrorDetails err = new ErrorDetails("Something went wrong. Please try again.", "error", LocalDateTime.now());
+        return new ResponseEntity<ErrorDetails>(err, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
 

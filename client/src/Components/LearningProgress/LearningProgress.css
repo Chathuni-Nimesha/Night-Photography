@@ -1,68 +1,65 @@
-/* Container and Typography */
-.p-6 {
-    padding: 2rem;
-    background-color: #fafafa;
+.nl-progress {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+  overflow-x: hidden;
+}
+
+.nl-progress-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.75rem;
+}
+
+.nl-progress-header h1 {
+  margin: 0.15rem 0 0.4rem;
+  font-size: clamp(2rem, 5vw, 3rem);
+  font-weight: 500;
+  line-height: 1.15;
+}
+
+.nl-progress-header p {
+  margin: 0;
+  max-width: 32rem;
+  color: var(--nl-muted);
+  line-height: 1.65;
+}
+
+.nl-progress-list .ant-list-item {
+  padding: 1.1rem 1.15rem !important;
+  margin-bottom: 0.75rem;
+  border: 1px solid var(--nl-border) !important;
+  border-radius: 2px !important;
+}
+
+.nl-progress-list .ant-list-item-meta-title {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 1.25rem !important;
+  font-weight: 500 !important;
+  color: var(--nl-text) !important;
+}
+
+.nl-progress-list .ant-list-item-meta-description {
+  color: var(--nl-muted) !important;
+  line-height: 1.65;
+}
+
+@media (max-width: 640px) {
+  .nl-progress-header .ant-btn {
+    width: 100%;
   }
-  
-  .text-xl {
-    font-size: 1.25rem;
+
+  .nl-progress-list .ant-list-item {
+    flex-direction: column;
+    align-items: flex-start !important;
   }
-  
-  .font-semibold {
-    font-weight: 600;
+
+  .nl-progress-list .ant-list-item-action {
+    margin-left: 0 !important;
+    margin-top: 0.75rem;
   }
-  
-  .mb-4 {
-    margin-bottom: 1rem;
-  }
-  
-  /* Button Styling */
-  .ant-btn-primary {
-    background: linear-gradient(to right, #f09433, #e6683c, #dc2743);
-    border: none;
-    border-radius: 1.5rem;
-    font-weight: bold;
-    padding: 0 1.25rem;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  }
-  
-  .ant-btn-primary:hover {
-    opacity: 0.9;
-  }
-  
-  /* Modal */
-  .ant-modal-content {
-    border-radius: 1.25rem;
-    padding: 1.5rem;
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.08);
-  }
-  
-  /* Inputs */
-  .ant-input,
-  .ant-textarea,
-  .ant-select-selector {
-    border-radius: 1rem;
-    background: #f9f9f9;
-    border: 1px solid #dbdbdb;
-  }
-  
-  /* List Styling */
-  .ant-list-item {
-    background: #fff;
-    border-radius: 1rem;
-    padding: 1rem;
-    margin-bottom: 1rem;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
-  }
-  
-  .ant-list-item-meta-title {
-    font-size: 16px;
-    font-weight: 600;
-    color: #262626;
-  }
-  
-  .ant-list-item-meta-description {
-    font-size: 14px;
-    color: #555;
-  }
-  
+}

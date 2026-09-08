@@ -1,120 +1,130 @@
 import React, { useEffect, useState, useRef } from "react";
-import PropTypes from "prop-types";
 import { useDispatch, useSelector } from "react-redux";
 import { getAllReels } from "../../Redux/Reel/Action";
-import { IconButton, Avatar, Box, Text, Progress } from "@chakra-ui/react";
-import { 
-  BsFillPlayFill, 
-  BsFillPauseFill,
-  BsHeart,
-  BsHeartFill,
-  BsChat,
-  BsShare,
+import { IconButton, Avatar, Text, Progress } from "@chakra-ui/react";
+import {
+  BsFillPlayFill,
   BsVolumeUp,
-  BsVolumeMute
+  BsVolumeMute,
 } from "react-icons/bs";
 import { GrNext, GrPrevious } from "react-icons/gr";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { getAuthToken } from "../../Config/auth";
 
 const ReelViewer = () => {
   const [currentReel, setCurrentReel] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [isLiked, setIsLiked] = useState(false);
   const videoRef = useRef(null);
-  
+
   const dispatch = useDispatch();
-  const { user, reel } = useSelector((store) => store);
-  const jwt = localStorage.getItem("token");
+  const { reel } = useSelector((store) => store);
+  const jwt = getAuthToken();
+  const reels = Array.isArray(reel.reels) ? reel.reels : [];
+  const active = reels[currentReel];
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
-    dispatch(getAllReels(jwt));
-  }, []);
+    if (jwt) dispatch(getAllReels(jwt));
+  }, [jwt, dispatch]);
 
   useEffect(() => {
     if (videoRef.current) {
       if (isPlaying) {
-        videoRef.current.play();
+        videoRef.current.play().catch(() => {});
       } else {
         videoRef.current.pause();
       }
     }
-  }, [isPlaying, currentReel]);
+  }, [isPlaying, currentReel, active?.video]);
 
   const handleNextReel = () => {
-    if (currentReel === reel.reels.length - 1) {
-      setCurrentReel(0);
-    } else {
-      setCurrentReel(currentReel + 1);
-    }
+    if (reels.length === 0) return;
+    setCurrentReel((index) => (index === reels.length - 1 ? 0 : index + 1));
     setProgress(0);
   };
 
   const handlePrevReel = () => {
-    if (currentReel === 0) {
-      setCurrentReel(reel.reels.length - 1);
-    } else {
-      setCurrentReel(currentReel - 1);
-    }
+    if (reels.length === 0) return;
+    setCurrentReel((index) => (index === 0 ? reels.length - 1 : index - 1));
     setProgress(0);
   };
 
   const handleTimeUpdate = () => {
-    if (videoRef.current) {
-      const progress = (videoRef.current.currentTime / videoRef.current.duration) * 100;
-      setProgress(progress);
+    if (videoRef.current?.duration) {
+      setProgress((videoRef.current.currentTime / videoRef.current.duration) * 100);
     }
   };
 
-  const handleVideoEnd = () => {
-    handleNextReel();
-  };
+  if (reel.loading && reels.length === 0) {
+    return (
+      <div className="nl-reels-shell">
+        <div className="nl-reels-frame nl-skeleton" aria-busy="true" aria-label="Loading reels" />
+      </div>
+    );
+  }
 
-  const togglePlay = () => {
-    setIsPlaying(!isPlaying);
-  };
+  if (!reel.loading && reel.error && reels.length === 0) {
+    return (
+      <div className="nl-reels-shell">
+        <section className="nl-empty nl-card" style={{ maxWidth: "22rem" }}>
+          <p className="nl-auth-kicker">Reels</p>
+          <h1>Reels could not be loaded.</h1>
+          <p>Something went wrong while fetching moving frames.</p>
+          <div className="nl-empty-actions">
+            <button type="button" className="nl-btn-primary" onClick={() => jwt && dispatch(getAllReels(jwt))}>
+              Try again
+            </button>
+          </div>
+        </section>
+      </div>
+    );
+  }
 
-  const toggleMute = () => {
-    setIsMuted(!isMuted);
-  };
-
-  const toggleLike = () => {
-    setIsLiked(!isLiked);
-  };
+  if (!reel.loading && reels.length === 0) {
+    return (
+      <div className="nl-reels-shell">
+        <section className="nl-empty nl-card" style={{ maxWidth: "22rem" }}>
+          <p className="nl-auth-kicker">Reels</p>
+          <h1>No moving frames yet.</h1>
+          <p>When photographers publish reels, they will appear here.</p>
+        </section>
+      </div>
+    );
+  }
 
   return (
-    <div className="reel-viewer min-h-screen flex items-center justify-center bg-gray-900">
-      <motion.div 
-        className="relative reel-container w-[360px] h-[640px] bg-black rounded-lg overflow-hidden"
-        initial={{ opacity: 0 }}
+    <div className="nl-reels-shell">
+      <motion.div
+        className="nl-reels-frame"
+        initial={reduceMotion ? false : { opacity: 0 }}
         animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+        exit={reduceMotion ? undefined : { opacity: 0 }}
       >
-        {/* Progress Bar */}
         <Progress
           value={progress}
           size="xs"
-          colorScheme="pink"
+          className="nl-reels-progress"
           position="absolute"
           top="0"
           width="100%"
           zIndex="10"
+          bg="rgba(255,255,255,0.12)"
         />
 
-        {/* Video Player */}
         <video
           ref={videoRef}
-          src={reel.reels[currentReel]?.video}
+          src={active?.video}
           className="w-full h-full object-cover"
           loop={false}
           muted={isMuted}
           onTimeUpdate={handleTimeUpdate}
-          onEnded={handleVideoEnd}
-          onClick={togglePlay}
+          onEnded={handleNextReel}
+          onClick={() => setIsPlaying((playing) => !playing)}
+          aria-label={active?.caption || "Night photography reel"}
         />
 
-        {/* Play/Pause Overlay */}
         <AnimatePresence>
           {!isPlaying && (
             <motion.div
@@ -123,12 +133,11 @@ const ReelViewer = () => {
               exit={{ opacity: 0, scale: 0.5 }}
               className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-40"
             >
-              <BsFillPlayFill className="text-white text-6xl" />
+              <BsFillPlayFill className="text-white text-6xl" aria-hidden="true" />
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Navigation Buttons */}
         <div className="absolute inset-y-0 left-0 flex items-center">
           <IconButton
             onClick={handlePrevReel}
@@ -150,66 +159,35 @@ const ReelViewer = () => {
           />
         </div>
 
-        {/* Controls Overlay */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black to-transparent">
-          {/* User Info */}
+        <div className="absolute bottom-0 left-0 right-0 p-4 nl-reels-chrome">
           <div className="flex items-center mb-4">
-            <Avatar 
-              size="sm" 
-              src={reel.reels[currentReel]?.user?.avatar} 
-              name={reel.reels[currentReel]?.user?.username}
+            <Avatar
+              size="sm"
+              src={active?.user?.userImage}
+              name={active?.user?.username}
             />
-            <Text className="ml-2 text-white font-medium">
-              {reel.reels[currentReel]?.user?.username}
+            <Text className="ml-2 text-night-text font-medium">
+              {active?.user?.username}
             </Text>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex justify-between items-center">
-            <div className="flex gap-4">
-              <IconButton
-                onClick={toggleLike}
-                icon={isLiked ? <BsHeartFill className="text-red-500" /> : <BsHeart />}
-                variant="ghost"
-                colorScheme="whiteAlpha"
-                aria-label="Like"
-              />
-              <IconButton
-                icon={<BsChat />}
-                variant="ghost"
-                colorScheme="whiteAlpha"
-                aria-label="Comment"
-              />
-              <IconButton
-                icon={<BsShare />}
-                variant="ghost"
-                colorScheme="whiteAlpha"
-                aria-label="Share"
-              />
-            </div>
+          <div className="flex justify-end items-center">
             <IconButton
-              onClick={toggleMute}
+              onClick={() => setIsMuted((muted) => !muted)}
               icon={isMuted ? <BsVolumeMute /> : <BsVolumeUp />}
               variant="ghost"
               colorScheme="whiteAlpha"
-              aria-label="Toggle mute"
+              aria-label={isMuted ? "Unmute" : "Mute"}
             />
           </div>
 
-          {/* Caption */}
-          {reel.reels[currentReel]?.caption && (
-            <Text className="text-white mt-2 text-sm">
-              {reel.reels[currentReel]?.caption}
-            </Text>
+          {active?.caption && (
+            <Text className="text-night-text mt-2 text-sm">{active.caption}</Text>
           )}
         </div>
       </motion.div>
     </div>
   );
-};
-
-ReelViewer.propTypes = {
-  reels: PropTypes.arrayOf(PropTypes.string).isRequired,
 };
 
 export default ReelViewer;

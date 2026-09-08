@@ -1,5 +1,6 @@
 package com.zos.services;
 
+import com.zos.exception.ForbiddenException;
 import com.zos.exception.LearningPlanException;
 import com.zos.exception.ResourceException;
 import com.zos.exception.TopicException;
@@ -61,6 +62,16 @@ public class LearningPlanServiceImpl implements LearningPlanService {
     public LearningPlan getLearningPlanById(Long planId) throws LearningPlanException {
         return learningPlanRepository.findById(planId)
                 .orElseThrow(() -> new LearningPlanException("Learning plan not found with id: " + planId));
+    }
+
+    @Override
+    public LearningPlan getLearningPlanForUser(Long planId, Integer userId) throws LearningPlanException {
+        LearningPlan plan = getLearningPlanById(planId);
+        Integer ownerId = plan.getUser() != null ? plan.getUser().getId() : null;
+        if (ownerId == null || userId == null || !ownerId.equals(userId)) {
+            throw new ForbiddenException("You cannot access this learning plan.");
+        }
+        return plan;
     }
 
     @Override

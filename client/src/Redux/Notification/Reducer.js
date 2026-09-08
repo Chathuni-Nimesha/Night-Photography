@@ -1,20 +1,26 @@
-// Redux/Notification/Reducer.js
 import {
     GET_NOTIFICATIONS,
+    GET_NOTIFICATIONS_REQUEST,
     GET_UNREAD_NOTIFICATIONS,
     MARK_NOTIFICATION_AS_READ,
     DELETE_NOTIFICATION,
-    CREATE_NOTIFICATION
+    CREATE_NOTIFICATION,
+    NOTIFICATION_ERROR,
+    CLEAR_NOTIFICATION_ERROR,
 } from "./ActionType";
 
 const initialState = {
     notifications: [],
     unreadNotifications: [],
+    loading: false,
+    error: false,
 };
 
 export const notificationReducer = (store = initialState, { type, payload }) => {
-    if (type === GET_NOTIFICATIONS) {
-        return { ...store, notifications: payload };
+    if (type === GET_NOTIFICATIONS_REQUEST) {
+        return { ...store, loading: true, error: false };
+    } else if (type === GET_NOTIFICATIONS) {
+        return { ...store, notifications: payload, loading: false, error: false };
     } else if (type === GET_UNREAD_NOTIFICATIONS) {
         return { ...store, unreadNotifications: payload };
     } else if (type === MARK_NOTIFICATION_AS_READ) {
@@ -47,6 +53,10 @@ export const notificationReducer = (store = initialState, { type, payload }) => 
             notifications: [payload, ...store.notifications],
             unreadNotifications: [payload, ...store.unreadNotifications],
         };
+    } else if (type === NOTIFICATION_ERROR) {
+        return { ...store, error: true, loading: false };
+    } else if (type === CLEAR_NOTIFICATION_ERROR) {
+        return { ...store, error: false };
     }
     return store;
 };

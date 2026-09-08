@@ -1,9 +1,3 @@
-.sidebarBox{
-    position: sticky;
-    top: 0px;
-}
-
-.postsBox{
-    width: 100%;
-   
+.postsBox {
+  width: 100%;
 }

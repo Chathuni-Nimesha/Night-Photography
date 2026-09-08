@@ -2,11 +2,9 @@ import React, { useEffect, useState } from "react";
 import { AiFillHeart, AiOutlineHeart } from "react-icons/ai";
 import { useDispatch, useSelector } from "react-redux";
 import { isCommentLikedByUser, timeDifference } from "../../Config/Logic";
-import { deleteComment, likeComment } from "../../Redux/Comment/Action";
-import { BsEmojiSmile, BsPencil, BsThreeDots } from "react-icons/bs";
-import EditCommentModal from "./EditCommentModal";
+import { deleteComment, likeComment, unLikeComment, editComment } from "../../Redux/Comment/Action";
 import { MdDelete } from "react-icons/md";
-import { editComment } from "../../Redux/Comment/Action";
+import { BsPencil } from "react-icons/bs";
 
 
 const CommentCard = ({ comment }) => {
@@ -29,7 +27,7 @@ const CommentCard = ({ comment }) => {
   };
 
   const handleUnLikeComment = () => {
-    dispatch(likeComment({ jwt, commentId: comment.id }));
+    dispatch(unLikeComment({ jwt, commentId: comment.id }));
     setIsCommentLike(false);
     setCommentLikes(commentLikes - 1);
   };
@@ -59,7 +57,6 @@ const CommentCard = ({ comment }) => {
      
     );
      setIsEditCommentInputOpen(false);
-     setCommentContent("")
     }
     
   };
@@ -69,12 +66,14 @@ const CommentCard = ({ comment }) => {
         <div className="flex items-center">
           <div className="">
             <img
-              className="w-9 h-9 rounded-full"
+              className="w-9 h-9 rounded-full object-cover"
               src={
                 comment?.userDto.userImage ||
                 "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png"
               }
-              alt=""
+            alt={comment?.userDto?.username ? `${comment.userDto.username} profile` : "Photographer"}
+            loading="lazy"
+            decoding="async"
             />
           </div>
           <div className="ml-3">
@@ -87,36 +86,36 @@ const CommentCard = ({ comment }) => {
               {commentLikes > 0 && <span>{commentLikes} like</span>}
               {user?.reqUser?.id === comment?.userDto?.id && (
                 <>
-                  <BsPencil
-                    className="cursor-pointer"
-                    onClick={handleClickOnEditComment}
-                  />
-                  <MdDelete
-                    className="cursor-pointer "
-                    onClick={handleDeleteComment}
-                  />
+                  <button type="button" className="nl-icon-btn" aria-label="Edit comment" onClick={handleClickOnEditComment}>
+                    <BsPencil />
+                  </button>
+                  <button type="button" className="nl-icon-btn" aria-label="Delete comment" onClick={handleDeleteComment}>
+                    <MdDelete />
+                  </button>
                 </>
               )}
             </div>
           </div>
         </div>
         {isCommentLiked ? (
-          <AiFillHeart
-            onClick={handleUnLikeComment}
-            className="text-xs hover:opacity-50 cursor-pointer text-red-600"
-          />
+          <button type="button" className="nl-icon-btn" aria-label="Unlike comment" onClick={handleUnLikeComment}>
+            <AiFillHeart className="text-xs text-red-600" />
+          </button>
         ) : (
-          <AiOutlineHeart
-            onClick={handleLikeComment}
-            className="text-xs hover:opacity-50 cursor-pointer "
-          />
+          <button type="button" className="nl-icon-btn" aria-label="Like comment" onClick={handleLikeComment}>
+            <AiOutlineHeart className="text-xs" />
+          </button>
         )}
       </div>
       {isEditCommentInputOpen && (
         <div>
+          <label htmlFor={`edit-comment-${comment.id}`} className="sr-only">
+            Edit comment
+          </label>
           <input
-            className=" outline-none border-b border-black text-sm"
-            placeholder="Add Comment..."
+            id={`edit-comment-${comment.id}`}
+            className="nl-input"
+            placeholder="Edit comment"
             type="text"
             onKeyPress={handleEditComment}
             onChange={handleCommnetInputChange}

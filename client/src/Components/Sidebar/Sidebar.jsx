@@ -1,144 +1,165 @@
-import { useDisclosure } from "@chakra-ui/hooks";
 import React, { useEffect, useRef, useState } from "react";
-import { IoReorderThreeOutline } from "react-icons/io5";
-
-import { useNavigate } from "react-router";
-import { mainu } from "./SidebarConfig";
-import "./Sidebar.css";
-import SearchComponent from "../SearchComponent/SearchComponent";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import CreatePostModal from "../Post/Create/CreatePostModal";
-import CreateReelModal from "../Create/CreateReel";
-import Notification from "../Notification/Notification";
-import wizDriveImage from '../../assets/IMG_5544.png';
-
+import { IoEllipsisHorizontal } from "react-icons/io5";
+import BrandMark from "../Brand/BrandMark";
+import { useCreateActions } from "../Layout/CreateContext";
+import SearchComponent from "../SearchComponent/SearchComponent";
+import { desktopNav, getActiveNavId, unreadActivityCount } from "./SidebarConfig";
+import { clearAuth } from "../../Config/auth";
+import "./Sidebar.css";
 
 const Sidebar = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user, notification } = useSelector((store) => store);
+  const { openCreatePost, openCreateReel, isSearchOpen, setIsSearchOpen } = useCreateActions();
+  const [showMore, setShowMore] = useState(false);
+  const moreRef = useRef(null);
+  const username = user.reqUser?.username;
+  const activeId = getActiveNavId(location.pathname, username);
+  const unreadCount = unreadActivityCount(notification);
 
-  const [activeTab, setActiveTab] = useState("Home");
-  const excludedBoxRef = useRef(null);
-  const [isSearchBoxVisible, setIsSearchBoxVisible] = useState(false);
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const { user } = useSelector((store) => store);
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [isCreateReelModalOpen, setIsCreateReelModalOpen] = useState(false)
+  useEffect(() => {
+    const onPointerDown = (event) => {
+      if (moreRef.current && !moreRef.current.contains(event.target)) {
+        setShowMore(false);
+      }
+    };
+    document.addEventListener("mousedown", onPointerDown);
+    return () => document.removeEventListener("mousedown", onPointerDown);
+  }, []);
 
-  const handleTabClick = (tab) => {
-    setActiveTab(tab);
-    if (tab === "Profile") {
-      navigate(`/${user.reqUser?.username}`);
-    } else if (tab === "Home") {
-      navigate("/");
-    } else if (tab === "Create Post") {
-      onOpen();
-    } else if (tab === "About Us") {
-      navigate("/about");
-    } else if(tab==="Reels"){
-      navigate("reels")
-    }
-    else if(tab==="Create Reels"){
-      handleOpenCreateReelModal()
-    }
-    else if(tab==="Notifications"){
-      navigate("/notifications")
-    }
-    else if(tab==="Create Story"){
-      navigate("/create-story")
-    }
-    else if(tab==="Learning Plan"){
-      navigate("/learning_plan")
-    }
-    else if(tab==="Learning Progress"){
-      navigate("/learning-progress")
-    }
-    if (tab === "Search") {
-      setIsSearchBoxVisible(true);
-    } else setIsSearchBoxVisible(false);
+  const handleLogout = () => {
+    clearAuth();
+    navigate("/login");
   };
 
-  function handleClick() {
-    setShowDropdown(!showDropdown);
-  }
-
-  const handleLogout=()=>{
-    localStorage.clear();
-    navigate("/login")
-  }
-
-
-  const handleCloseCreateReelModal=()=>{
-    setIsCreateReelModalOpen(false);
-  }
-
-  const handleOpenCreateReelModal=()=>{
-    setIsCreateReelModalOpen(true);
-  }
+  const handleItem = (item) => {
+    if (item.action === "create-post") {
+      openCreatePost();
+      return;
+    }
+    if (item.to === "profile") {
+      if (username) navigate(`/${username}`);
+      return;
+    }
+    if (item.to) navigate(item.to);
+  };
 
   return (
-    <div className=" sticky top-0 h-[100vh] pb-10 flex">
-      <div className={`${activeTab === "Search" ? "px-3" : "px-10"} flex flex-col justify-between h-full`}>
-        <div className="pt-10">
-          {!isSearchBoxVisible && (
-            <img
-            className="w-40"
-            src={wizDriveImage}
-            alt=""
-          />
-          )}
-          <div className="mt-10">
-            {mainu.map((item) => (
-              <div
-                onClick={() => handleTabClick(item.title)}
-                className="flex items-center mb-5 cursor-pointer text-lg"
-              >
-                {activeTab === item.title ? item.activeIcon : item.icon}
-                <p
-                  className={` ${
-                    activeTab === item.title ? "font-bold" : "font-semibold"
-                  } ${isSearchBoxVisible ? "hidden" : "block"}`}
-                >
-                  {item.title}
-                </p>
-              </div>
-            ))}
+    <aside className="nl-sidebar" aria-label="Main">
+      {isSearchOpen ? (
+        <SearchComponent setIsSearchVisible={setIsSearchOpen} />
+      ) : (
+        <>
+          <div>
+            <BrandMark to="/" />
+            <nav className="nl-nav-list mt-10" aria-label="Primary">
+              {desktopNav.map((item) => {
+                const Icon = activeId === item.id ? item.activeIcon : item.icon;
+                const isActive = activeId === item.id;
+                if (item.to && item.to !== "profile" && !item.action) {
+                  return (
+                    <Link
+                      key={item.id}
+                      to={item.to}
+                      className={`nl-nav-item ${isActive ? "is-active" : ""}`}
+                      aria-current={isActive ? "page" : undefined}
+                      aria-label={item.id === "activity" && unreadCount > 0 ? `${item.label}, ${unreadCount} unread` : undefined}
+                    >
+                      <Icon aria-hidden="true" className="text-xl" />
+                      <span>{item.label}</span>
+                      {item.id === "activity" && unreadCount > 0 && (
+                        <span className="nl-nav-badge" aria-hidden="true">
+                          {unreadCount > 9 ? "9+" : unreadCount}
+                        </span>
+                      )}
+                    </Link>
+                  );
+                }
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className={`nl-nav-item ${item.id === "create" ? "nl-nav-cta" : ""} ${isActive ? "is-active" : ""}`}
+                    onClick={() => handleItem(item)}
+                    aria-current={isActive ? "page" : undefined}
+                  >
+                    <Icon aria-hidden="true" className="text-xl" />
+                    <span>{item.label}</span>
+                  </button>
+                );
+              })}
+            </nav>
           </div>
-        </div>
 
-        <div clasName="relative">
-          <div onClick={handleClick} className="flex items-center cursor-pointer ">
-            <IoReorderThreeOutline className="text-2xl" />
-            {!isSearchBoxVisible && <p className="ml-5">More</p>}
-          </div>
-          <div className="absolute bottom-20 left-14  w-[80%]">
-            {showDropdown && (
-              <div className="shadow-md">
-                {/* <p className=" w-full py-2 text-base px-4 border-t border-b  cursor-pointer">
-                  Switch Appearance
-                </p> */}
-             
-                <p onClick={handleLogout} className=" w-full py-2 text-base px-4 border-t border-b cursor-pointer">
+          <div className="relative mt-auto" ref={moreRef}>
+            <button
+              type="button"
+              className="nl-nav-item"
+              aria-expanded={showMore}
+              aria-haspopup="menu"
+              onClick={() => setShowMore((open) => !open)}
+            >
+              <IoEllipsisHorizontal aria-hidden="true" className="text-xl" />
+              <span>More</span>
+            </button>
+            {showMore && (
+              <div className="nl-card absolute bottom-12 left-0 right-0 p-2 z-20" role="menu">
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="nl-nav-item"
+                  onClick={() => {
+                    setIsSearchOpen(true);
+                    setShowMore(false);
+                  }}
+                >
+                  Search
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="nl-nav-item"
+                  onClick={() => {
+                    setShowMore(false);
+                    navigate("/create-story");
+                  }}
+                >
+                  New story
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="nl-nav-item"
+                  onClick={() => {
+                    setShowMore(false);
+                    openCreateReel();
+                  }}
+                >
+                  New reel
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="nl-nav-item"
+                  onClick={() => {
+                    setShowMore(false);
+                    navigate("/learning-progress");
+                  }}
+                >
+                  Progress
+                </button>
+                <button type="button" role="menuitem" className="nl-nav-item" onClick={handleLogout}>
                   Log out
-                </p>
-              
-              
+                </button>
               </div>
             )}
           </div>
-        </div>
-      </div>
-
-      {isSearchBoxVisible && (
-        <div >
-          
-          <SearchComponent setIsSearchVisible={setIsSearchBoxVisible} />
-        </div>
+        </>
       )}
-
-      <CreatePostModal onClose={onClose} isOpen={isOpen} onOpen={onOpen} />
-
-      <CreateReelModal onClose={handleCloseCreateReelModal} isOpen={isCreateReelModalOpen} onOpen={handleOpenCreateReelModal}></CreateReelModal>
-    </div>
+    </aside>
   );
 };
 

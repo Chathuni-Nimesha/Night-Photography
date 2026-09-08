@@ -1,21 +1,6 @@
 import { BASE_URL } from "../../Config/api";
-import { FETCH_FOLLOWING_USER_STORY, FETCH_USER_STORY, CREATE_STORY } from "./ActionType";
-
-export const findFollowingUserStory = (data) => async (dispatch) => {
-  const res = await fetch(
-    `${BASE_URL}/api/stories/f/${data.userIds}`,
-    {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer " + data.jwt,
-      },
-    }
-  );
-
-  const stories = await res.json();
-  dispatch({ type: FETCH_FOLLOWING_USER_STORY, payload: stories });
-};
+import { handleUnauthorized } from "../../Config/auth";
+import { FETCH_USER_STORY, CREATE_STORY } from "./ActionType";
 
 export const findStoryByUserId = (data) => async (dispatch) => {
   try {
@@ -29,13 +14,12 @@ export const findStoryByUserId = (data) => async (dispatch) => {
         },
       }
     );
-    
+    if (handleUnauthorized(res)) return;
     if (!res.ok) {
-      throw new Error(`HTTP error! status: ${res.status}`);
+      throw new Error("Could not load stories");
     }
     
     const stories = await res.json();
-    console.log("stories :- ", stories);
     dispatch({ type: FETCH_USER_STORY, payload: stories });
   } catch (error) {
     console.error("Error fetching stories:", error);
@@ -56,9 +40,9 @@ export const createStory = (data) => async (dispatch) => {
         body: JSON.stringify(data.story),
       }
     );
-    
+    if (handleUnauthorized(res)) return;
     if (!res.ok) {
-      throw new Error(`HTTP error! status: ${res.status}`);
+      throw new Error("Could not publish that story");
     }
     
     const createdStory = await res.json();

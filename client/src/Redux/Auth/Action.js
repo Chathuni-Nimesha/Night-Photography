@@ -1,6 +1,3 @@
-// ${BASE_URL}
-
-
 import { BASE_URL } from "../../Config/api";
 import { SIGN_IN, SIGN_UP } from "./ActionType";
 
@@ -13,13 +10,22 @@ export const signinAction = (data) => async (dispatch) => {
         Authorization: "Basic " + btoa(data.email + ":" + data.password),
       },
     });
-    const token = res.headers.get("Authorization");
 
+    if (!res.ok) {
+      return { ok: false };
+    }
+
+    const headerToken = res.headers.get("Authorization");
+    if (!headerToken) {
+      return { ok: false };
+    }
+
+    const token = headerToken.replace(/^Bearer\s+/i, "");
     localStorage.setItem("token", token);
-    console.log("token from header :- ", token);
-    dispatch({type:SIGN_IN,payload:token})
+    dispatch({ type: SIGN_IN, payload: token });
+    return { ok: true };
   } catch (error) {
-    console.log("catch error ", error);
+    return { ok: false };
   }
 };
 
@@ -32,10 +38,15 @@ export const signupAction = (data) => async (dispatch) => {
       },
       body: JSON.stringify(data),
     });
-    const user = await res.json();
-    console.log("Signup :- ",user)
+
+    const user = await res.json().catch(() => null);
+    if (!res.ok) {
+      return { ok: false, message: "Could not create the account." };
+    }
+
     dispatch({ type: SIGN_UP, payload: user });
+    return { ok: true };
   } catch (error) {
-    console.log("catch error ", error);
+    return { ok: false, message: "Could not create the account." };
   }
 };

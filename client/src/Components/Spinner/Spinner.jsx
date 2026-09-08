@@ -5,10 +5,10 @@ const SpinnerCard = () => {
   return (
     <div>
       <Spinner
-        thickness="4px"
-        speed="0.65s"
-        emptyColor="gray.200"
-        color="blue.500"
+        thickness="3px"
+        speed="0.7s"
+        emptyColor="rgba(255,255,255,0.12)"
+        color="#C9A36A"
         size="xl"
       />
     </div>

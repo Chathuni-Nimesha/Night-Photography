@@ -4,121 +4,183 @@ import {
   getProgressUpdates,
   createProgressUpdate,
   updateProgressUpdate,
-  deleteProgressUpdate
+  deleteProgressUpdate,
 } from "../../Redux/LearningProgress/Action";
-import {
-  Button,
-  Modal,
-  Form,
-  Input,
-  List,
-  message,
-  Select
-} from "antd";
-import {
-  PlusOutlined,
-  EditOutlined,
-  DeleteOutlined,
-  FileTextOutlined,
-  ToolOutlined,
-  RocketOutlined
-} from "@ant-design/icons";
-import "./LearningProgress.css"; // 👈 Make sure this CSS file is created
+import { Button, Modal, Form, Input, List, message, Select } from "antd";
+import { PlusOutlined, EditOutlined, DeleteOutlined } from "@ant-design/icons";
+import { getAuthToken } from "../../Config/auth";
+import "./LearningProgress.css";
 
 const { Option } = Select;
 
+const friendlyError = "That could not be saved. Please try again.";
+
 const LearningProgress = () => {
   const dispatch = useDispatch();
-  const token = localStorage.getItem("token");
-
-  const { updates } = useSelector((store) => store.learningProgress);
-
+  const token = getAuthToken();
+  const { updates, loading, error } = useSelector((store) => store.learningProgress);
   const [form] = Form.useForm();
+  const [modalApi, contextHolder] = Modal.useModal();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
 
   useEffect(() => {
-    dispatch(getProgressUpdates(token));
-  }, [dispatch]);
+    if (token) dispatch(getProgressUpdates(token));
+  }, [dispatch, token]);
 
-  const handleSubmit = (values) => {
-    if (editing) {
-      dispatch(updateProgressUpdate(token, editing.id, values));
-      message.success("Update edited successfully!");
-    } else {
-      dispatch(createProgressUpdate(token, values));
-      message.success("New update added!");
+  const handleSubmit = async (values) => {
+    try {
+      if (editing) {
+        await dispatch(updateProgressUpdate(token, editing.id, values));
+        message.success("Progress note updated");
+      } else {
+        await dispatch(createProgressUpdate(token, values));
+        message.success("Progress note added");
+      }
+      form.resetFields();
+      setIsModalOpen(false);
+      setEditing(null);
+    } catch {
+      message.error(friendlyError);
     }
-    form.resetFields();
-    setIsModalOpen(false);
-    setEditing(null);
   };
 
   const handleTemplateChange = (value) => {
     if (value === "tutorial") {
       form.setFieldsValue({
-        title: "📚 Completed a Tutorial",
-        content: "Finished learning [topic] tutorial."
+        title: "Finished a night photography tutorial",
+        content: "Worked through a tutorial on [technique].",
       });
     } else if (value === "skill") {
       form.setFieldsValue({
-        title: "🛠️ Learned a New Skill",
-        content: "I learned how to [skill]."
+        title: "Practiced a lighting skill",
+        content: "Practiced [skill] after dark.",
       });
     } else if (value === "project") {
       form.setFieldsValue({
-        title: "🚀 Built a Project",
-        content: "I developed a project using [technology]."
+        title: "Completed a night photography project",
+        content: "Finished a project on [subject].",
       });
     }
   };
 
+  const handleDelete = (id) => {
+    modalApi.confirm({
+      title: "Delete progress note",
+      content: "This note will be removed from your craft journey.",
+      okText: "Delete",
+      okType: "danger",
+      cancelText: "Cancel",
+      async onOk() {
+        try {
+          await dispatch(deleteProgressUpdate(token, id));
+          message.success("Progress note deleted");
+        } catch {
+          message.error(friendlyError);
+        }
+      },
+    });
+  };
+
+  const notes = Array.isArray(updates) ? updates : [];
+
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">📈 Learning Progress Updates</h2>
+    <div className="nl-progress">
+      {contextHolder}
+      <header className="nl-progress-header">
+        <div>
+          <p className="nl-auth-kicker" style={{ textAlign: "left" }}>
+            Craft journey
+          </p>
+          <h1>Learning progress</h1>
+          <p>Keep notes on tutorials, skills, and projects as you work through night photography craft.</p>
+        </div>
         <Button
           type="primary"
           icon={<PlusOutlined />}
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => {
+            setEditing(null);
+            form.resetFields();
+            setIsModalOpen(true);
+          }}
         >
-          Add Update
+          Add note
         </Button>
-      </div>
+      </header>
 
-      <List
-        dataSource={updates}
-        renderItem={(item) => (
-          <List.Item
-            key={item.id}
-            actions={[
-              <Button
-                icon={<EditOutlined />}
-                size="small"
-                onClick={() => {
-                  setEditing(item);
-                  form.setFieldsValue(item);
-                  setIsModalOpen(true);
-                }}
-              />,
-              <Button
-                icon={<DeleteOutlined />}
-                size="small"
-                danger
-                onClick={() => {
-                  dispatch(deleteProgressUpdate(token, item.id));
-                  message.success("Update deleted!");
-                }}
-              />
-            ]}
-          >
-            <List.Item.Meta
-              title={item.title}
-              description={item.content}
-            />
-          </List.Item>
-        )}
-      />
+      {error && (
+        <section className="nl-empty nl-card">
+          <h2>Progress could not be loaded.</h2>
+          <p>Something went wrong while fetching your craft notes.</p>
+          <div className="nl-empty-actions">
+            <Button type="primary" onClick={() => dispatch(getProgressUpdates(token))}>
+              Try again
+            </Button>
+          </div>
+        </section>
+      )}
+
+      {!error && loading && (
+        <div aria-busy="true" aria-label="Loading progress notes">
+          <div className="nl-skeleton" style={{ height: "4.5rem", marginBottom: "0.75rem" }} />
+          <div className="nl-skeleton" style={{ height: "4.5rem", marginBottom: "0.75rem" }} />
+          <div className="nl-skeleton" style={{ height: "4.5rem" }} />
+        </div>
+      )}
+
+      {!error && !loading && notes.length === 0 && (
+        <section className="nl-empty nl-card">
+          <h2>No progress notes yet.</h2>
+          <p>Record what you practiced. Notes appear here only after you add them.</p>
+          <div className="nl-empty-actions">
+            <Button
+              type="primary"
+              onClick={() => {
+                setEditing(null);
+                form.resetFields();
+                setIsModalOpen(true);
+              }}
+            >
+              Add a note
+            </Button>
+          </div>
+        </section>
+      )}
+
+      {!error && !loading && notes.length > 0 && (
+        <List
+          className="nl-progress-list"
+          dataSource={notes}
+          renderItem={(item) => (
+            <List.Item
+              key={item.id}
+              actions={[
+                <Button
+                  key="edit"
+                  icon={<EditOutlined />}
+                  size="small"
+                  aria-label="Edit progress note"
+                  onClick={() => {
+                    setEditing(item);
+                    form.setFieldsValue(item);
+                    setIsModalOpen(true);
+                  }}
+                />,
+                <Button
+                  key="delete"
+                  icon={<DeleteOutlined />}
+                  size="small"
+                  danger
+                  aria-label="Delete progress note"
+                  onClick={() => handleDelete(item.id)}
+                />,
+              ]}
+            >
+              <List.Item.Meta title={item.title} description={item.content} />
+            </List.Item>
+          )}
+        />
+      )}
 
       <Modal
         open={isModalOpen}
@@ -128,46 +190,27 @@ const LearningProgress = () => {
           form.resetFields();
         }}
         onOk={() => form.submit()}
-        title={editing ? "Edit Update ✏️" : "Add Progress Update 🚀"}
+        okText={editing ? "Save" : "Add note"}
+        title={editing ? "Edit progress note" : "Add progress note"}
+        destroyOnClose
       >
         <Form form={form} onFinish={handleSubmit} layout="vertical">
           {!editing && (
-            <Form.Item label="Choose a Template">
-              <Select
-                placeholder="Select a template"
-                onChange={handleTemplateChange}
-                optionLabelProp="label"
-              >
-                <Option value="tutorial" label="📚 Completed Tutorial">
-                  <FileTextOutlined /> 📚 Completed Tutorial
-                </Option>
-                <Option value="skill" label="🛠️ New Skill Learned">
-                  <ToolOutlined /> 🛠️ New Skill Learned
-                </Option>
-                <Option value="project" label="🚀 Built a Project">
-                  <RocketOutlined /> 🚀 Built a Project
-                </Option>
+            <Form.Item label="Starting point">
+              <Select placeholder="Optional template" onChange={handleTemplateChange} allowClear>
+                <Option value="tutorial">Night photography tutorial</Option>
+                <Option value="skill">Lighting skill</Option>
+                <Option value="project">Photography project</Option>
               </Select>
             </Form.Item>
           )}
 
-          <Form.Item
-            name="title"
-            label="Title"
-            rules={[{ required: true, message: "Please enter a title" }]}
-          >
-            <Input placeholder="e.g., Completed React Bootcamp" />
+          <Form.Item name="title" label="Title" rules={[{ required: true, message: "Please enter a title" }]}>
+            <Input placeholder="What you practiced" />
           </Form.Item>
 
-          <Form.Item
-            name="content"
-            label="Details"
-            rules={[{ required: true, message: "Please enter details" }]}
-          >
-            <Input.TextArea
-              rows={4}
-              placeholder="What did you learn or complete?"
-            />
+          <Form.Item name="content" label="Details" rules={[{ required: true, message: "Please enter details" }]}>
+            <Input.TextArea rows={4} placeholder="What did you learn or complete?" />
           </Form.Item>
         </Form>
       </Modal>

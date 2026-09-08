@@ -1,7 +1,9 @@
 // Redux/Notification/Action.js
 import { BASE_URL } from "../../Config/api";
+import { handleUnauthorized } from "../../Config/auth";
 import {
     GET_NOTIFICATIONS,
+    GET_NOTIFICATIONS_REQUEST,
     GET_UNREAD_NOTIFICATIONS,
     MARK_NOTIFICATION_AS_READ,
     DELETE_NOTIFICATION,
@@ -11,6 +13,7 @@ import {
 } from "./ActionType";
 
 export const getNotificationsAction = (token) => async (dispatch) => {
+    dispatch({ type: GET_NOTIFICATIONS_REQUEST });
     try {
         const res = await fetch(`${BASE_URL}/api/notifications/`, {
             method: "GET",
@@ -20,14 +23,15 @@ export const getNotificationsAction = (token) => async (dispatch) => {
             },
         });
 
+        if (handleUnauthorized(res)) return;
         if (!res.ok) {
-            throw new Error('Failed to fetch notifications');
+            throw new Error("Could not load activity");
         }
 
         const notifications = await res.json();
-        dispatch({ type: GET_NOTIFICATIONS, payload: notifications });
+        dispatch({ type: GET_NOTIFICATIONS, payload: Array.isArray(notifications) ? notifications : [] });
     } catch (error) {
-        dispatch({ type: NOTIFICATION_ERROR, payload: error.message });
+        dispatch({ type: NOTIFICATION_ERROR, payload: true });
     }
 };
 
@@ -41,14 +45,12 @@ export const getUnreadNotificationsAction = (token) => async (dispatch) => {
             },
         });
 
-        if (!res.ok) {
-            throw new Error('Failed to fetch unread notifications');
-        }
-
-        const notifications = await res.json();
-        dispatch({ type: GET_UNREAD_NOTIFICATIONS, payload: notifications });
-    } catch (error) {
-        dispatch({ type: NOTIFICATION_ERROR, payload: error.message });
+        if (handleUnauthorized(res)) return;
+        if (!res.ok) return;
+        const notifications = await res.json().catch(() => []);
+        dispatch({ type: GET_UNREAD_NOTIFICATIONS, payload: Array.isArray(notifications) ? notifications : [] });
+    } catch {
+        return;
     }
 };
 
@@ -63,6 +65,7 @@ export const markNotificationAsReadAction = (notificationId) => async (dispatch)
             },
         });
 
+        if (handleUnauthorized(res)) return;
         if (!res.ok) {
             throw new Error('Failed to mark notification as read');
         }
@@ -71,7 +74,7 @@ export const markNotificationAsReadAction = (notificationId) => async (dispatch)
         dispatch({ type: MARK_NOTIFICATION_AS_READ, payload: notification });
         return notification;
     } catch (error) {
-        dispatch({ type: NOTIFICATION_ERROR, payload: error.message });
+        dispatch({ type: NOTIFICATION_ERROR, payload: true });
         throw error;
     }
 };
@@ -86,13 +89,14 @@ export const deleteNotificationAction = (notificationId) => async (dispatch) => 
             },
         });
 
+        if (handleUnauthorized(res)) return;
         if (!res.ok) {
             throw new Error('Failed to delete notification');
         }
 
         dispatch({ type: DELETE_NOTIFICATION, payload: notificationId });
     } catch (error) {
-        dispatch({ type: NOTIFICATION_ERROR, payload: error.message });
+        dispatch({ type: NOTIFICATION_ERROR, payload: true });
         throw error;
     }
 };
@@ -108,6 +112,7 @@ export const createNotificationAction = (notification, token) => async (dispatch
             body: JSON.stringify(notification),
         });
 
+        if (handleUnauthorized(res)) return;
         if (!res.ok) {
             throw new Error('Failed to create notification');
         }
@@ -116,7 +121,7 @@ export const createNotificationAction = (notification, token) => async (dispatch
         dispatch({ type: CREATE_NOTIFICATION, payload: newNotification });
         return newNotification;
     } catch (error) {
-        dispatch({ type: NOTIFICATION_ERROR, payload: error.message });
+        dispatch({ type: NOTIFICATION_ERROR, payload: true });
         throw error;
     }
 };

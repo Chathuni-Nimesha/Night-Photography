@@ -1,0 +1,171 @@
+/* Ant Design is used only on Craft / Progress. Restyle it to Nightlife. */
+
+.ant-btn {
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 0.72rem !important;
+  border-radius: 2px !important;
+  box-shadow: none !important;
+}
+
+.ant-btn-primary {
+  background: var(--nl-accent) !important;
+  border-color: var(--nl-accent) !important;
+  color: #07080a !important;
+}
+
+.ant-btn-primary:hover,
+.ant-btn-primary:focus {
+  background: #d4b27c !important;
+  border-color: #d4b27c !important;
+  color: #07080a !important;
+}
+
+.ant-btn-default,
+.ant-btn-dashed {
+  background: transparent !important;
+  border-color: var(--nl-border) !important;
+  color: var(--nl-text) !important;
+}
+
+.ant-btn-default:hover,
+.ant-btn-dashed:hover {
+  border-color: rgba(201, 163, 106, 0.5) !important;
+  color: var(--nl-accent) !important;
+}
+
+.ant-btn-dangerous {
+  background: transparent !important;
+  border-color: rgba(196, 92, 92, 0.45) !important;
+  color: #e8b4b4 !important;
+}
+
+.ant-modal-mask {
+  background: rgba(7, 8, 10, 0.78) !important;
+}
+
+.ant-modal-content,
+.ant-modal-header,
+.ant-modal-footer {
+  background: var(--nl-surface) !important;
+  border-color: var(--nl-border) !important;
+  box-shadow: none !important;
+  border-radius: 2px !important;
+}
+
+.ant-modal-title {
+  color: var(--nl-text) !important;
+  font-family: "Cormorant Garamond", serif !important;
+  font-weight: 500 !important;
+  font-size: 1.45rem !important;
+}
+
+.ant-modal-close {
+  color: var(--nl-muted) !important;
+}
+
+.ant-form-item-label > label {
+  color: var(--nl-muted) !important;
+  font-size: 0.72rem !important;
+  letter-spacing: 0.14em !important;
+  text-transform: uppercase !important;
+}
+
+.ant-input,
+.ant-input-affix-wrapper,
+.ant-picker,
+.ant-select-selector,
+.ant-input-textarea textarea {
+  background: var(--nl-bg-alt) !important;
+  border: 1px solid var(--nl-border) !important;
+  border-radius: 2px !important;
+  color: var(--nl-text) !important;
+  box-shadow: none !important;
+}
+
+.ant-input::placeholder,
+.ant-picker-input > input::placeholder {
+  color: var(--nl-muted) !important;
+}
+
+.ant-input:focus,
+.ant-input-affix-wrapper-focused,
+.ant-picker-focused,
+.ant-select-focused .ant-select-selector {
+  border-color: var(--nl-accent) !important;
+}
+
+.ant-checkbox-checked .ant-checkbox-inner {
+  background-color: var(--nl-accent) !important;
+  border-color: var(--nl-accent) !important;
+}
+
+.ant-checkbox-inner {
+  background: var(--nl-bg-alt) !important;
+  border-color: var(--nl-border) !important;
+  border-radius: 2px !important;
+}
+
+.ant-checkbox-wrapper {
+  color: var(--nl-text) !important;
+}
+
+.ant-collapse,
+.ant-collapse-item,
+.ant-collapse-content,
+.ant-card,
+.ant-list-item {
+  background: var(--nl-surface) !important;
+  border-color: var(--nl-border) !important;
+  color: var(--nl-text) !important;
+}
+
+.ant-collapse-header,
+.ant-card-head-title,
+.ant-list-item-meta-title {
+  color: var(--nl-text) !important;
+}
+
+.ant-list-item-meta-description,
+.ant-collapse-header {
+  color: var(--nl-muted) !important;
+}
+
+.ant-tag {
+  background: rgba(201, 163, 106, 0.12) !important;
+  border: 1px solid rgba(201, 163, 106, 0.28) !important;
+  color: var(--nl-accent) !important;
+  border-radius: 2px !important;
+}
+
+.ant-tag-red {
+  background: rgba(196, 92, 92, 0.12) !important;
+  border-color: rgba(196, 92, 92, 0.35) !important;
+  color: #e8b4b4 !important;
+}
+
+.ant-picker-dropdown,
+.ant-select-dropdown,
+.ant-message-notice-content {
+  background: var(--nl-surface) !important;
+  border: 1px solid var(--nl-border) !important;
+  color: var(--nl-text) !important;
+}
+
+.ant-picker-panel-container,
+.ant-picker-header,
+.ant-picker-body {
+  background: var(--nl-surface) !important;
+  color: var(--nl-text) !important;
+}
+
+.ant-spin-dot-item {
+  background-color: var(--nl-accent) !important;
+}
+
+@media (max-width: 640px) {
+  .ant-modal {
+    max-width: calc(100vw - 1.5rem) !important;
+    margin: 0.75rem auto !important;
+  }
+}

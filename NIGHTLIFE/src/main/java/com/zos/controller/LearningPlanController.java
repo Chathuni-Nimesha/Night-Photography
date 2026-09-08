@@ -53,9 +53,11 @@ public class LearningPlanController {
 
     @GetMapping("/{planId}")
     public ResponseEntity<LearningPlan> getLearningPlan(
-            @PathVariable Long planId) throws LearningPlanException {
+            @PathVariable Long planId,
+            @RequestHeader("Authorization") String token) throws LearningPlanException, UserException {
 
-        LearningPlan plan = learningPlanService.getLearningPlanById(planId);
+        User user = userService.findUserProfile(token);
+        LearningPlan plan = learningPlanService.getLearningPlanForUser(planId, user.getId());
         return new ResponseEntity<>(plan, HttpStatus.OK);
     }
 

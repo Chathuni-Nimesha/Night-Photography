@@ -71,11 +71,7 @@ public class PostServiceImplementation implements PostService {
 
     @Override
     public List<Post> findAllPost() throws PostException {
-        List<Post> posts = postRepo.findAll();
-        if (posts.size() > 0) {
-            return posts;
-        }
-        throw new PostException("Post Not Exist");
+        return postRepo.findAll();
     }
 
 
@@ -105,21 +101,9 @@ public class PostServiceImplementation implements PostService {
     }
     @Override
     public Post unLikePost(Integer postId, Integer userId) throws UserException, PostException {
-        // TODO Auto-generated method stub
-
-        User user = userService.findUserById(userId);
-        UserDto userDto = new UserDto();
-
-        userDto.setEmail(user.getEmail());
-        userDto.setUsername(user.getUsername());
-        userDto.setId(user.getId());
-        userDto.setName(user.getName());
-        userDto.setUserImage(user.getImage());
-
+        userService.findUserById(userId);
         Post post = findePostById(postId);
-        post.getLikedByUsers().remove(userDto);
-
-
+        post.getLikedByUsers().removeIf(dto -> userId.equals(dto.getId()));
         return postRepo.save(post);
     }
 
@@ -131,9 +115,7 @@ public class PostServiceImplementation implements PostService {
         Post post = findePostById(postId);
 
         User user = userService.findUserById(userId);
-        System.out.println(post.getUser().getId() + " ------ " + user.getId());
         if (post.getUser().getId().equals(user.getId())) {
-            System.out.println("inside delete");
             postRepo.deleteById(postId);
 
             return "Post Deleted Successfully";
@@ -150,12 +132,9 @@ public class PostServiceImplementation implements PostService {
 
 
         List<Post> posts = postRepo.findAllPostByUserIds(userIds);
-
-        if (posts.size() == 0) {
-            throw new PostException("No Post Available of your followings");
+        if (posts == null) {
+            return List.of();
         }
-
-
         return posts;
     }
 
@@ -165,7 +144,9 @@ public class PostServiceImplementation implements PostService {
 
         Post post = findePostById(postId);
         User user = userService.findUserById(userId);
-        if (!user.getSavedPost().contains(post)) {
+        boolean alreadySaved = user.getSavedPost().stream()
+                .anyMatch(saved -> post.getId() != null && post.getId().equals(saved.getId()));
+        if (!alreadySaved) {
             user.getSavedPost().add(post);
             userRepo.save(user);
         }
@@ -180,8 +161,8 @@ public class PostServiceImplementation implements PostService {
         Post post = findePostById(postId);
         User user = userService.findUserById(userId);
 
-        if (user.getSavedPost().contains(post)) {
-            user.getSavedPost().remove(post);
+        boolean removed = user.getSavedPost().removeIf(saved -> post.getId() != null && post.getId().equals(saved.getId()));
+        if (removed) {
             userRepo.save(user);
         }
 

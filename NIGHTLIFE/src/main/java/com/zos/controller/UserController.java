@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.zos.exception.PostException;
+import com.zos.dto.PublicUserDto;
 import com.zos.exception.UserException;
 import com.zos.model.User;
 import com.zos.response.MessageResponse;
@@ -32,20 +32,20 @@ public class UserController {
 
 
     @GetMapping("id/{id}")
-    public ResponseEntity<User> findUserByIdHandler(@PathVariable Integer id) throws UserException {
+    public ResponseEntity<PublicUserDto> findUserByIdHandler(@PathVariable Integer id) throws UserException {
 
         User user = userService.findUserById(id);
 
-        return new ResponseEntity<User>(user, HttpStatus.OK);
+        return new ResponseEntity<>(PublicUserDto.from(user), HttpStatus.OK);
     }
 
 
     @GetMapping("username/{username}")
-    public ResponseEntity<User> findByUsernameHandler(@PathVariable("username") String username) throws UserException {
+    public ResponseEntity<PublicUserDto> findByUsernameHandler(@PathVariable("username") String username) throws UserException {
 
         User user = userService.findUserByUsername(username);
 
-        return new ResponseEntity<User>(user, HttpStatus.ACCEPTED);
+        return new ResponseEntity<>(PublicUserDto.from(user), HttpStatus.ACCEPTED);
 
     }
 
@@ -80,20 +80,18 @@ public class UserController {
     }
 
     @GetMapping("/m/{userIds}")
-    public ResponseEntity<List<User>> findAllUsersByUserIdsHandler(@PathVariable List<Integer> userIds) {
+    public ResponseEntity<List<PublicUserDto>> findAllUsersByUserIdsHandler(@PathVariable List<Integer> userIds) {
         List<User> users = userService.findUsersByUserIds(userIds);
-
-        System.out.println("userIds ------ " + userIds);
-        return new ResponseEntity<List<User>>(users, HttpStatus.ACCEPTED);
+        return new ResponseEntity<>(PublicUserDto.from(users), HttpStatus.ACCEPTED);
 
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<User>> searchUserHandler(@RequestParam("q") String query) throws UserException {
+    public ResponseEntity<List<PublicUserDto>> searchUserHandler(@RequestParam("q") String query) throws UserException {
 
         List<User> users = userService.searchUser(query);
 
-        return new ResponseEntity<List<User>>(users, HttpStatus.OK);
+        return new ResponseEntity<>(PublicUserDto.from(users), HttpStatus.OK);
     }
 
     @PutMapping("/account/edit")
@@ -107,11 +105,11 @@ public class UserController {
     }
 
     @GetMapping("/populer")
-    public ResponseEntity<List<User>> populerUsersHandler() {
+    public ResponseEntity<List<PublicUserDto>> populerUsersHandler() {
 
         List<User> populerUsers = userService.popularUser();
 
-        return new ResponseEntity<List<User>>(populerUsers, HttpStatus.OK);
+        return new ResponseEntity<>(PublicUserDto.from(populerUsers), HttpStatus.OK);
 
     }
 

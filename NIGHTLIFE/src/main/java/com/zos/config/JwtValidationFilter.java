@@ -5,7 +5,6 @@ import java.util.List;
 
 import javax.crypto.SecretKey;
 
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -14,7 +13,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.JwtParser;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.FilterChain;
@@ -37,7 +35,9 @@ public class JwtValidationFilter extends OncePerRequestFilter {
 			try {
 
 				//extracting the word Bearer
-				jwt = jwt.substring(7);
+				if (jwt.startsWith("Bearer ") || jwt.startsWith("bearer ")) {
+					jwt = jwt.substring(7);
+				}
 
 				
 				SecretKey key= Keys.hmacShaKeyFor(SecurityContest.JWT_KEY.getBytes());
@@ -60,7 +60,7 @@ public class JwtValidationFilter extends OncePerRequestFilter {
 				SecurityContextHolder.getContext().setAuthentication(auth);
 				
 			} catch (Exception e) {
-				throw new BadCredentialsException("Invalid Token received... error");
+				SecurityContextHolder.clearContext();
 			}
 			
 			
@@ -77,8 +77,11 @@ public class JwtValidationFilter extends OncePerRequestFilter {
 	
 	@Override
 	protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
-	
-		return request.getServletPath().equals("/signin");
+		String path = request.getServletPath();
+		return path.equals("/signin")
+				|| path.equals("/signup")
+				|| path.startsWith("/oauth2/")
+				|| path.startsWith("/login/");
 	}
 
 }

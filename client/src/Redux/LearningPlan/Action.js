@@ -1,4 +1,5 @@
 import { BASE_URL } from "../../Config/api";
+import { handleUnauthorized } from "../../Config/auth";
 import {
   CREATE_LEARNING_PLAN,
   GET_LEARNING_PLANS_REQUEST,
@@ -25,16 +26,15 @@ export const createLearningPlan = (data) => async (dispatch) => {
       body: JSON.stringify(data.planData),
     });
 
+    if (handleUnauthorized(res)) return;
     if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.message || 'Failed to create learning plan');
+      throw new Error("Could not save that plan");
     }
 
     const plan = await res.json();
     dispatch({ type: CREATE_LEARNING_PLAN, payload: plan });
     return plan;
   } catch (error) {
-    console.error("Error creating learning plan:", error);
     throw error;
   }
 };
@@ -50,16 +50,16 @@ export const getLearningPlans = (jwt) => async (dispatch) => {
       },
     });
     
+    if (handleUnauthorized(res)) return;
     if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.message || 'Failed to fetch learning plans');
+      throw new Error("Could not load learning plans");
     }
     
     const plans = await res.json();
     dispatch({ type: GET_LEARNING_PLANS_SUCCESS, payload: plans });
     return plans;
   } catch (error) {
-    dispatch({ type: GET_LEARNING_PLANS_FAILURE, payload: error.message });
+    dispatch({ type: GET_LEARNING_PLANS_FAILURE, payload: true });
     throw error;
   }
 };
@@ -75,20 +75,19 @@ export const updateLearningPlan = (data) => async (dispatch) => {
       body: JSON.stringify(data.planData),
     });
     
+    if (handleUnauthorized(res)) return;
     if (res.status === 403) {
       throw new Error('You do not have permission to update this plan');
     }
     
     if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.message || 'Failed to update learning plan');
+      throw new Error("Could not save that plan");
     }
     
     const plan = await res.json();
     dispatch({ type: UPDATE_LEARNING_PLAN, payload: plan });
     return plan;
   } catch (error) {
-    console.error("Error updating learning plan:", error);
     throw error;
   }
 };
@@ -102,18 +101,17 @@ export const deleteLearningPlan = (data) => async (dispatch) => {
       },
     });
     
+    if (handleUnauthorized(res)) return;
     if (res.status === 403) {
       throw new Error('You do not have permission to delete this plan');
     }
     
     if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.message || 'Failed to delete learning plan');
+      throw new Error("Could not delete that plan");
     }
     
     dispatch({ type: DELETE_LEARNING_PLAN, payload: data.planId });
   } catch (error) {
-    console.error("Error deleting learning plan:", error);
     throw error;
   }
 };
@@ -129,20 +127,19 @@ export const addTopicToPlan = (data) => async (dispatch) => {
       body: JSON.stringify(data.topicData),
     });
     
+    if (handleUnauthorized(res)) return;
     if (res.status === 403) {
       throw new Error('You do not have permission to add topics to this plan');
     }
     
     if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.message || 'Failed to add topic');
+      throw new Error("Could not add that topic");
     }
     
     const topic = await res.json();
     dispatch({ type: ADD_TOPIC, payload: { planId: data.planId, topic } });
     return topic;
   } catch (error) {
-    console.error("Error adding topic:", error);
     throw error;
   }
 };
@@ -158,20 +155,19 @@ export const updateTopic = (data) => async (dispatch) => {
       body: JSON.stringify(data.topicData),
     });
     
+    if (handleUnauthorized(res)) return;
     if (res.status === 403) {
       throw new Error('You do not have permission to update this topic');
     }
     
     if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.message || 'Failed to update topic');
+      throw new Error("Could not save that topic");
     }
     
     const topic = await res.json();
     dispatch({ type: UPDATE_TOPIC, payload: topic });
     return topic;
   } catch (error) {
-    console.error("Error updating topic:", error);
     throw error;
   }
 };
@@ -185,18 +181,17 @@ export const deleteTopic = (data) => async (dispatch) => {
       },
     });
     
+    if (handleUnauthorized(res)) return;
     if (res.status === 403) {
       throw new Error('You do not have permission to delete this topic');
     }
     
     if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.message || 'Failed to delete topic');
+      throw new Error("Could not delete that topic");
     }
     
     dispatch({ type: DELETE_TOPIC, payload: data.topicId });
   } catch (error) {
-    console.error("Error deleting topic:", error);
     throw error;
   }
 };
@@ -212,20 +207,19 @@ export const addResourceToTopic = (data) => async (dispatch) => {
       body: JSON.stringify(data.resourceData),
     });
     
+    if (handleUnauthorized(res)) return;
     if (res.status === 403) {
       throw new Error('You do not have permission to add resources to this topic');
     }
     
     if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.message || 'Failed to add resource');
+      throw new Error("Could not add that resource");
     }
     
     const resource = await res.json();
     dispatch({ type: ADD_RESOURCE, payload: { topicId: data.topicId, resource } });
     return resource;
   } catch (error) {
-    console.error("Error adding resource:", error);
     throw error;
   }
 };
@@ -241,20 +235,19 @@ export const updateResource = (data) => async (dispatch) => {
       body: JSON.stringify(data.resourceData),
     });
     
+    if (handleUnauthorized(res)) return;
     if (res.status === 403) {
       throw new Error('You do not have permission to update this resource');
     }
     
     if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.message || 'Failed to update resource');
+      throw new Error("Could not save that resource");
     }
     
     const resource = await res.json();
     dispatch({ type: UPDATE_RESOURCE, payload: resource });
     return resource;
   } catch (error) {
-    console.error("Error updating resource:", error);
     throw error;
   }
 };
@@ -268,18 +261,17 @@ export const deleteResource = (data) => async (dispatch) => {
       },
     });
     
+    if (handleUnauthorized(res)) return;
     if (res.status === 403) {
       throw new Error('You do not have permission to delete this resource');
     }
     
     if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.message || 'Failed to delete resource');
+      throw new Error("Could not delete that resource");
     }
     
     dispatch({ type: DELETE_RESOURCE, payload: data.resourceId });
   } catch (error) {
-    console.error("Error deleting resource:", error);
     throw error;
   }
 };

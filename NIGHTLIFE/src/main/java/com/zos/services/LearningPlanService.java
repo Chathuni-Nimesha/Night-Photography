@@ -14,6 +14,7 @@ public interface LearningPlanService {
     LearningPlan createLearningPlan(LearningPlan learningPlan, Integer userId) throws UserException;
     LearningPlan updateLearningPlan(LearningPlan learningPlan, Integer userId) throws UserException, LearningPlanException;
     LearningPlan getLearningPlanById(Long planId) throws LearningPlanException;
+    LearningPlan getLearningPlanForUser(Long planId, Integer userId) throws LearningPlanException;
     List<LearningPlan> getLearningPlansByUserId(Integer userId) throws UserException;
     void deleteLearningPlan(Long planId, Integer userId) throws LearningPlanException, UserException;
 

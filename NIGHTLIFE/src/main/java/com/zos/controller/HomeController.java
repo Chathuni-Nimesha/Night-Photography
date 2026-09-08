@@ -9,7 +9,7 @@ public class HomeController {
 	@GetMapping("/api")
 	public String homeControllerHandler() {
 		
-		return "welcome to cookinghub backend api";
+		return "welcome to nightlife api";
 		
 	}
 

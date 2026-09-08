@@ -2,7 +2,10 @@ package com.zos.config;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -15,20 +18,30 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.CorsConfigurationSource;
-
-import jakarta.servlet.http.HttpServletRequest;
 
 @Configuration
 public class AppConfig {
 
+	@Value("${frontend.url:http://localhost:3000}")
+	private String frontendUrl;
+
+	@Autowired
+	private OAuth2LoginSuccessHandler oauth2LoginSuccessHandler;
+
 	@Bean
 	public SecurityFilterChain securityConfigration(HttpSecurity http) throws Exception {
+		List<String> origins = Arrays.asList(
+				"http://localhost:3000",
+				"http://localhost:3010",
+				"http://localhost:4000",
+				frontendUrl
+		);
+
 		http
 				.csrf().disable()
 				.cors().configurationSource(request -> {
 					CorsConfiguration config = new CorsConfiguration();
-					config.setAllowedOrigins(Arrays.asList("http://localhost:3000", "http://localhost:4000"));
+					config.setAllowedOrigins(origins);
 					config.setAllowedMethods(Collections.singletonList("*"));
 					config.setAllowCredentials(true);
 					config.setAllowedHeaders(Collections.singletonList("*"));
@@ -37,17 +50,17 @@ public class AppConfig {
 					return config;
 				})
 				.and()
-				.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+				.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
 				.and()
 				.authorizeHttpRequests()
 				.requestMatchers(HttpMethod.POST, "/signup").permitAll()
 				.requestMatchers(HttpMethod.GET, "/api").permitAll()
-				.requestMatchers("/oauth2/**", "/login/**", "/oauth-user").permitAll()
+				.requestMatchers("/oauth2/**", "/login/**").permitAll()
 				.anyRequest().authenticated()
 				.and()
 				.oauth2Login(oauth -> oauth
-						.defaultSuccessUrl("http://localhost:3000/oauth-success", true)
-						.failureUrl("http://localhost:3000/signin?error=true")
+						.successHandler(oauth2LoginSuccessHandler)
+						.failureUrl(frontendUrl + "/login?error=true")
 				)
 				.formLogin()
 				.and()

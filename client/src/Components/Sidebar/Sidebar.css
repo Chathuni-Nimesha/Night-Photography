@@ -1,11 +1,18 @@
+.nl-sidebar .search-container {
+  width: 100%;
+  height: auto;
+  min-height: 100%;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  border-radius: 0;
+  padding: 0;
+}
 
-  .logo {
-    font-family: 'Billabong', cursive;
-    font-size: 30px;
-    color: #222222;
-    text-shadow: 1px 1px 3px #000000;
-  }
-
-  .hideItemName{
-    display: none;
-  }
+.nl-sidebar .search-input {
+  background: var(--nl-bg);
+  border: 1px solid var(--nl-border);
+  color: var(--nl-text);
+  border-radius: 2px;
+  padding: 0.65rem 0.8rem;
+}

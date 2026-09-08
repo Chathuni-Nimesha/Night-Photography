@@ -40,8 +40,6 @@ public class CommentController {
 
         Comments createdComment = commentService.createComment(comment, postId, user.getId());
 
-        System.out.println("created comment c--- " + createdComment.getContent());
-
         return new ResponseEntity<Comments>(createdComment, HttpStatus.CREATED);
 
     }
@@ -49,10 +47,8 @@ public class CommentController {
 
     @PutMapping("/like/{commentId}")
     public ResponseEntity<Comments> likeCommentHandler(@PathVariable Integer commentId, @RequestHeader("Authorization") String token) throws UserException, CommentException {
-        System.out.println("----------- like comment id ---------- ");
         User user = userService.findUserProfile(token);
         Comments likedComment = commentService.likeComment(commentId, user.getId());
-        System.out.println("liked comment - : " + likedComment);
         return new ResponseEntity<Comments>(likedComment, HttpStatus.OK);
     }
 
@@ -66,9 +62,9 @@ public class CommentController {
     }
 
     @PutMapping("/edit")
-    public ResponseEntity<MessageResponse> editCommentHandler(@RequestBody Comments comment) throws CommentException {
-
-        commentService.editComment(comment, comment.getId());
+    public ResponseEntity<MessageResponse> editCommentHandler(@RequestBody Comments comment, @RequestHeader("Authorization") String token) throws CommentException, UserException {
+        User user = userService.findUserProfile(token);
+        commentService.editComment(comment, comment.getId(), user.getId());
 
         MessageResponse res = new MessageResponse("Comment Updated Successfully");
 
@@ -77,9 +73,9 @@ public class CommentController {
 
 
     @DeleteMapping("/delete/{commentId}")
-    public ResponseEntity<MessageResponse> deleteCommentHandler(@PathVariable Integer commentId) throws CommentException {
-
-        commentService.deleteCommentById(commentId);
+    public ResponseEntity<MessageResponse> deleteCommentHandler(@PathVariable Integer commentId, @RequestHeader("Authorization") String token) throws CommentException, UserException {
+        User user = userService.findUserProfile(token);
+        commentService.deleteCommentById(commentId, user.getId());
 
         MessageResponse res = new MessageResponse("Comment Delete Successfully");
 

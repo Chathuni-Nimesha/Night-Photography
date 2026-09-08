@@ -36,10 +36,11 @@ public class JwtTokenProvider {
 		SecretKey key=Keys.hmacShaKeyFor(SecurityContest.JWT_KEY.getBytes());
 		
 		String jwt=Jwts.builder()
-				.setIssuer("Ashok Zarmariya")
+				.setIssuer("Nightlife")
 				.claim("username",user.getEmail())
+				.claim("authorities", "ROLE_USER")
 				.setIssuedAt(new Date())
-				.setExpiration(new Date(new Date().getTime()+ 990000000))
+				.setExpiration(new Date(new Date().getTime() + SecurityContest.JWT_EXPIRATION))
 				.signWith(key).compact();
 		
 		

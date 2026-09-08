@@ -1,0 +1,27 @@
+# Secrets and local env
+.env
+.env.local
+.env.*.local
+*.pem
+*.jks
+NIGHTLIFE/src/main/resources/application-local.properties
+
+# Dependencies and build output
+node_modules/
+**/target/
+**/build/
+coverage/
+
+# Keep Maven Wrapper jar
+!NIGHTLIFE/.mvn/wrapper/maven-wrapper.jar
+
+# Logs and OS/IDE
+*.log
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.iml
+.classpath
+.project
+.settings/

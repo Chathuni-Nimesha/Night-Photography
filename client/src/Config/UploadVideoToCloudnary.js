@@ -1,22 +1,23 @@
+import { cloudinaryUploadUrl, getCloudinaryCloudName, getCloudinaryPreset } from "./cloudinary";
+
 export const uploadMediaToCloudinary = async (media) => {
-    if (media) {
-      const data = new FormData();
-      data.append("file", media);
-      data.append("upload_preset", "cloud_video_preset");
-      data.append("cloud_name", "daooobsqx");
-  
-      const res = await fetch(
-        "https://api.cloudinary.com/v1_1/dvawjogg8/video/upload",
-        {
-          method: "post",
-          body: data,
-        }
-      );
-      const fileData = await res.json();
-      console.log("url : ", fileData);
-      return fileData.url.toString();
-    } else {
-      console.log("error");
-    }
-  };
-  
+  if (!media) return null;
+
+  try {
+    const data = new FormData();
+    data.append("file", media);
+    data.append("upload_preset", getCloudinaryPreset(true));
+    data.append("cloud_name", getCloudinaryCloudName());
+
+    const res = await fetch(cloudinaryUploadUrl(true), {
+      method: "POST",
+      body: data,
+    });
+
+    if (!res.ok) return null;
+    const fileData = await res.json();
+    return fileData.url ? String(fileData.url) : null;
+  } catch (error) {
+    return null;
+  }
+};

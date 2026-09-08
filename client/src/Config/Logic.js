@@ -3,7 +3,7 @@ export const isReqUser = (userId1, userId2) => {
 };
 
 export const isFollowing = (reqUser, user2) => {
-  if (reqUser && user2) {
+  if (reqUser && user2?.follower) {
     for (let item of user2.follower) {
       if (reqUser.id === item.id) return true;
     }
@@ -13,6 +13,7 @@ export const isFollowing = (reqUser, user2) => {
 };
 
 export const suggetions=(reqUser)=>{
+  if (!reqUser?.following || !reqUser?.follower) return [];
 
   const set=new Set(reqUser.following.map((item)=>JSON.stringify(item)));
 
@@ -29,7 +30,7 @@ export const suggetions=(reqUser)=>{
 }
 
 export const isSavedPost = (user, postId) => {
-  // user.savedPost
+  if (!user?.savedPost) return false;
 
   for (let item of user.savedPost) {
     if (item.id === postId) return true;
@@ -38,6 +39,7 @@ export const isSavedPost = (user, postId) => {
 };
 
 export const isPostLikedByUser = (post, userId) => {
+  if (!post?.likedByUsers || !userId) return false;
   for (let item of post.likedByUsers) {
     if (item.id === userId) return true;
   }
@@ -46,16 +48,15 @@ export const isPostLikedByUser = (post, userId) => {
 };
 
 export const isCommentLikedByUser = (comment, userId) => {
-  // likedByUsers
+  if (!comment?.likedByUsers || !userId) return false;
   for (let item of comment.likedByUsers) {
-    // console.log("liked comment item -: ", item);
     if (item.id === userId) return true;
   }
   return false;
 };
 
 export const isReqUserPost = (post, reqUser) => {
-  return post.user.id === reqUser.id;
+  return Boolean(post?.user?.id && reqUser?.id && post.user.id === reqUser.id);
 };
 
 function getTimeInHours(timestamp) {
@@ -65,7 +66,8 @@ function getTimeInHours(timestamp) {
 }
 
 export const hasStory = (users) => {
- 
+  if (!Array.isArray(users)) return [];
+
   const temp = users.reduce((acc, item) => {
     if (item.stories?.length > 0) {
       const time = getTimeInHours(

@@ -1,72 +1,52 @@
 import {
   AiOutlineHome,
   AiFillHome,
-  AiOutlineSearch,
   AiOutlineCompass,
   AiFillCompass,
-  AiFillMessage,
-  AiOutlineMessage,
   AiOutlineHeart,
   AiFillHeart,
   AiOutlinePlusCircle,
-  AiFillPlusCircle,
-  AiOutlineCamera,
-  AiFillCamera,
+  AiOutlineInfoCircle,
 } from "react-icons/ai";
 import { RiVideoFill, RiVideoLine } from "react-icons/ri";
 import { CgProfile } from "react-icons/cg";
-import { AiOutlineInfoCircle } from "react-icons/ai";
+import { MdOutlineAutoStories } from "react-icons/md";
 
-export const mainu = [
-  {
-    title: "Home",
-    icon: <AiOutlineHome className="text-2xl mr-5" />,
-    activeIcon: <AiFillHome className="text-2xl mr-5" />,
-  },
-  {
-    title: "About Us",
-    icon: <AiOutlineInfoCircle className="text-2xl mr-5" />,
-    activeIcon: <AiOutlineInfoCircle className="text-2xl mr-5" />,
-  },
-  {
-    title: "Search",
-    icon: <AiOutlineSearch className="text-2xl mr-5" />,
-    activeIcon: <AiOutlineSearch className="text-2xl mr-5" />,
-  },
-  {
-    title: "Learning Progress",
-    icon: <AiOutlineCompass className="text-2xl mr-5" />,
-    activeIcon: <AiFillCompass className="text-2xl mr-5" />,
-  },
-  {
-    title: "Reels",
-    icon: <RiVideoLine className="text-2xl mr-5" />,
-    activeIcon: <RiVideoFill className="text-2xl mr-5" />,
-  },
-  {
-    title: "Create Reels",
-    icon: <RiVideoLine className="text-2xl mr-5" />,
-    activeIcon: <RiVideoFill className="text-2xl mr-5" />,
-  },
-  {
-    title: "Learning Plan",
-    icon: <AiOutlineMessage className="text-2xl mr-5" />,
-    activeIcon: <AiFillMessage className="text-2xl mr-5" />,
-  },
-  {
-    title: "Notifications",
-    icon: <AiOutlineHeart className="text-2xl mr-5" />,
-    activeIcon: <AiFillHeart className="text-2xl mr-5" />,
-  },
-  {
-    title: "Create Story",
-    icon: <AiOutlineCamera className="text-2xl mr-5" />,
-    activeIcon: <AiFillCamera className="text-2xl mr-5" />,
-  },
-  {
-    title: "Create Post",
-    icon: <AiOutlinePlusCircle className="text-2xl mr-5" />,
-    activeIcon: <AiFillPlusCircle className="text-2xl mr-5" />,
-  },
-  { title: "Profile", icon: <CgProfile className="text-2xl mr-5" />, activeIcon: <CgProfile className="text-2xl mr-5" /> },
+export const desktopNav = [
+  { id: "home", label: "Home", to: "/", icon: AiOutlineHome, activeIcon: AiFillHome },
+  { id: "explore", label: "Explore", to: "/explore", icon: AiOutlineCompass, activeIcon: AiFillCompass },
+  { id: "craft", label: "Craft", to: "/learning_plan", icon: MdOutlineAutoStories, activeIcon: MdOutlineAutoStories },
+  { id: "reels", label: "Reels", to: "/reels", icon: RiVideoLine, activeIcon: RiVideoFill },
+  { id: "activity", label: "Activity", to: "/notifications", icon: AiOutlineHeart, activeIcon: AiFillHeart },
+  { id: "create", label: "Create", action: "create-post", icon: AiOutlinePlusCircle, activeIcon: AiOutlinePlusCircle },
+  { id: "profile", label: "Profile", to: "profile", icon: CgProfile, activeIcon: CgProfile },
+  { id: "about", label: "About", to: "/about", icon: AiOutlineInfoCircle, activeIcon: AiOutlineInfoCircle },
 ];
+
+export const mobileNav = [
+  { id: "home", label: "Home", to: "/", icon: AiOutlineHome, activeIcon: AiFillHome },
+  { id: "explore", label: "Explore", to: "/explore", icon: AiOutlineCompass, activeIcon: AiFillCompass },
+  { id: "create", label: "Create", action: "create-post", icon: AiOutlinePlusCircle, activeIcon: AiOutlinePlusCircle },
+  { id: "reels", label: "Reels", to: "/reels", icon: RiVideoLine, activeIcon: RiVideoFill },
+  { id: "profile", label: "Profile", to: "profile", icon: CgProfile, activeIcon: CgProfile },
+];
+
+export const unreadActivityCount = (notification) => {
+  const unread = notification?.unreadNotifications;
+  if (Array.isArray(unread)) return unread.length;
+  const all = notification?.notifications;
+  if (!Array.isArray(all)) return 0;
+  return all.filter((item) => item && item.isRead === false).length;
+};
+
+export const getActiveNavId = (pathname, username) => {
+  if (pathname === "/" || pathname.startsWith("/p/")) return "home";
+  if (pathname.startsWith("/explore")) return "explore";
+  if (pathname.startsWith("/learning_plan") || pathname.startsWith("/learning-progress")) return "craft";
+  if (pathname.startsWith("/reels")) return "reels";
+  if (pathname.startsWith("/notifications")) return "activity";
+  if (pathname.startsWith("/about")) return "about";
+  if (pathname.startsWith("/create-story")) return "create";
+  if (username && pathname === `/${username}`) return "profile";
+  return "";
+};

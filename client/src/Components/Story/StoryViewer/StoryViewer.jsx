@@ -19,9 +19,6 @@ const StoryImage = styled.img`
 
 function StoryViewer({ stories }) {
   const [currentStoryIndex, setCurrentStoryIndex] = useState(0);
-  const [currentUserStoryIndex,setCurrentUserStoryIndex]=useState(0);
-
-
   const [activeIndex, setActiveIndex] = useState(0);
 
   
@@ -52,18 +49,14 @@ function StoryViewer({ stories }) {
   useEffect(() => {
     const intervalId = setInterval(() => {
       handleNextStory();
-      
     }, 2000);
-
     return () => clearInterval(intervalId);
-  }, [currentStoryIndex]);
-
-  console.log("story ---- ",stories)
+  }, [currentStoryIndex]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className='relative w-full'>
        <StoryViewerContainer tabIndex={0} onKeyDown={handleKeyDown}>
-      { <StoryImage src={stories?.[currentStoryIndex].image} alt="story image"/>}
+      { <StoryImage src={stories?.[currentStoryIndex].image} alt="Story frame"/>}
    
     </StoryViewerContainer>
     <div className='absolute top-0 flex w-full'>

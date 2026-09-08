@@ -1,11 +1,8 @@
 import {
-  Button,
   Modal,
   ModalBody,
   ModalContent,
-  ModalHeader,
   ModalOverlay,
-  useDisclosure,
 } from "@chakra-ui/react";
 import React, { useEffect, useState } from "react";
 import { AiFillHeart, AiOutlineHeart } from "react-icons/ai";
@@ -13,14 +10,13 @@ import {
   BsBookmark,
   BsBookmarkFill,
   BsEmojiSmile,
-  BsPencil,
-  BsThreeDots,
 } from "react-icons/bs";
 import { FaRegComment } from "react-icons/fa";
-import { RiSendPlaneLine } from "react-icons/ri";
+import { IoCloseOutline } from "react-icons/io5";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 import { timeDifference } from "../../Config/Logic";
+import { getPostMedia, isVideoUrl, postAltText } from "../../Config/media";
 import { createComment, getAllComments } from "../../Redux/Comment/Action";
 import { findPostByIdAction } from "../../Redux/Post/Action";
 import CommentCard from "./CommentCard";
@@ -29,7 +25,6 @@ import "./CommentModal.css";
 const CommentModal = ({
   isOpen,
   onClose,
-  onOpen,
   postData,
   handleLikePost,
   handleUnLikePost,
@@ -37,6 +32,7 @@ const CommentModal = ({
   handleUnSavePost,
   isPostLiked,
   isSaved,
+  redirectOnClose = true,
 }) => {
   const dispatch = useDispatch();
   const jwt = localStorage.getItem("token");
@@ -44,30 +40,30 @@ const CommentModal = ({
   const [commentContent, setCommentContent] = useState("");
   const { postId } = useParams();
   const navigate = useNavigate();
-
-  // console.log("coments ---- ",comments)
+  const activeCommentPostId = postId || postData?.id;
 
   useEffect(() => {
-    if (postId) {
+    if (activeCommentPostId && isOpen) {
       dispatch(
         findPostByIdAction({
           jwt,
-          postId,
+          postId: activeCommentPostId,
         })
       );
-      dispatch(getAllComments({jwt,postId}))
+      dispatch(getAllComments({ jwt, postId: activeCommentPostId }));
     }
-  }, [postId, comments?.createdComment, comments?.deletedComment, comments?. updatedComment]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeCommentPostId, isOpen, comments?.createdComment, comments?.deletedComment, comments?.updatedComment, dispatch, jwt]);
 
   const handleAddComment = () => {
+    if (!activeCommentPostId || !commentContent.trim()) return;
     const data = {
       jwt,
-      postId,
+      postId: activeCommentPostId,
       data: {
         content: commentContent,
       },
     };
-    console.log("comment content ", commentContent);
     dispatch(createComment(data));
     setCommentContent("");
   };
@@ -81,52 +77,83 @@ const CommentModal = ({
     } else return;
   };
 
-  const handleClose = () => {
-    onClose();
-    navigate("/");
+  const leavePostView = () => {
+    const historyIndex = window.history.state?.idx;
+    if (typeof historyIndex === "number" && historyIndex > 0) {
+      navigate(-1);
+      return;
+    }
+    navigate("/", { replace: true });
   };
 
-  
+  const handleClose = (event) => {
+    event?.stopPropagation?.();
+    onClose();
+    if (redirectOnClose || postId) {
+      leavePostView();
+    }
+  };
+
+  const matchesActivePost = (item) =>
+    item?.id != null && String(item.id) === String(activeCommentPostId);
+  const activePost = matchesActivePost(post.singlePost) ? post.singlePost : postData;
+  const media = getPostMedia(activePost);
+  const frame = media[0];
+
   return (
     <div>
       <Modal size={"4xl"} onClose={handleClose} isOpen={isOpen} isCentered>
-        <ModalOverlay />
-        <ModalContent>
+        <ModalOverlay bg="rgba(7,8,10,0.86)" />
+        <ModalContent bg="#12151C" color="#F4F1EA" border="1px solid rgba(255,255,255,0.08)" borderRadius="2px">
           <ModalBody>
-            <div className="flex h-[75vh] ">
-              <div className="w-[45%] flex flex-col justify-center">
-                <img
-                  className="max-h-full max-w-full"
-                  src={post.singlePost?.image}
-                  alt=""
-                />
+            <div className="flex flex-col md:flex-row h-auto md:h-[75vh] gap-4">
+              <div className="w-full md:w-[55%] flex flex-col justify-center bg-[#050608]">
+                {frame && isVideoUrl(frame) ? (
+                  <video src={frame} controls className="max-h-full max-w-full object-contain" />
+                ) : (
+                  frame && (
+                    <img
+                      className="max-h-full max-w-full object-contain"
+                      src={frame}
+                      alt={postAltText(activePost)}
+                    />
+                  )
+                )}
               </div>
-              <div className="w-[55%] pl-10 relative">
+              <div className="w-full md:w-[45%] md:pl-6 relative">
                 <div className="reqUser flex justify-between items-center py-5">
                   <div className="flex items-center">
                     <div className="">
                       <img
-                        className="w-9 h-9 rounded-full"
+                        className="w-9 h-9 rounded-full object-cover"
                         src={
+                          activePost?.user?.userImage ||
                           user.reqUser?.image ||
                           "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png"
                         }
-                        alt=""
+                        alt={activePost?.user?.username ? `${activePost.user.username} profile` : "Photographer"}
                       />
                     </div>
                     <div className="ml-3">
-                      <p>{post?.singlePost?.user?.name}</p>
-                      <p>{post?.singlePost?.user?.username}</p>
+                      <p>{activePost?.user?.name}</p>
+                      <p>{activePost?.user?.username}</p>
                     </div>
                   </div>
-                  <BsThreeDots/>
+                  <button
+                    type="button"
+                    className="nl-icon-btn"
+                    aria-label="Close"
+                    onClick={handleClose}
+                  >
+                    <IoCloseOutline size={22} aria-hidden="true" />
+                  </button>
                 </div>
                 <hr />
 
                 <div className="comments ">
                   {comments.comments?.length > 0 &&
                     comments.comments?.map((item) => (
-                      <CommentCard comment={item} />
+                      <CommentCard key={item?.id} comment={item} />
                     ))}
                 </div>
 
@@ -137,38 +164,45 @@ const CommentModal = ({
                         <AiFillHeart
                           onClick={handleUnLikePost}
                           className="text-2xl hover:opacity-50 cursor-pointer text-red-600"
+                          aria-label="Unlike"
+                          role="button"
                         />
                       ) : (
                         <AiOutlineHeart
                           onClick={handleLikePost}
                           className="text-2xl hover:opacity-50 cursor-pointer "
+                          aria-label="Like"
+                          role="button"
                         />
                       )}
 
-                      <FaRegComment className="text-xl hover:opacity-50 cursor-pointer" />
-                      <RiSendPlaneLine className="text-xl hover:opacity-50 cursor-pointer" />
+                  <FaRegComment className="text-xl" aria-hidden="true" />
                     </div>
                     <div className="cursor-pointer">
                       {isSaved ? (
                         <BsBookmarkFill
-                          onClick={() => handleUnSavePost(post.singlePost?.id)}
+                          onClick={() => handleUnSavePost(activePost?.id)}
                           className="text-xl"
+                          aria-label="Unsave"
+                          role="button"
                         />
                       ) : (
                         <BsBookmark
-                          onClick={() => handleSavePost(post.singlePost?.id)}
+                          onClick={() => handleSavePost(activePost?.id)}
                           className="text-xl hover:opacity-50 cursor-pointer"
+                          aria-label="Save"
+                          role="button"
                         />
                       )}
                     </div>
                   </div>
-                  {post.singlePost?.likedByUsers?.length > 0 && (
+                  {activePost?.likedByUsers?.length > 0 && (
                     <p className="text-sm font-semibold py-2">
-                      {post.singlePost?.likedByUsers?.length} likes{" "}
+                      {activePost?.likedByUsers?.length} likes{" "}
                     </p>
                   )}
                   <p className="opacity-70 pb-5">
-                    {timeDifference(post?.singlePost?.createdAt)}
+                    {timeDifference(activePost?.createdAt)}
                   </p>
                   <div className=" flex items-center ">
                     <BsEmojiSmile className="mr-3 text-xl" />

@@ -13,9 +13,9 @@ public interface NotificationService {
 
     List<Notification> getNotificationsByUserId(Integer userId) throws UserException;
 
-    Notification markAsRead(Integer notificationId) throws NotificationException;
+    Notification markAsRead(Integer notificationId, Integer userId) throws NotificationException;
 
-    void deleteNotification(Integer notificationId) throws NotificationException;
+    void deleteNotification(Integer notificationId, Integer userId) throws NotificationException;
 
     List<Notification> getUnreadNotifications(Integer userId) throws UserException;
 }

@@ -1,26 +1,22 @@
 import {
   Modal,
   ModalBody,
-  ModalCloseButton,
   ModalContent,
-  ModalHeader,
   ModalOverlay,
 } from "@chakra-ui/modal";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { FaPhotoVideo } from "react-icons/fa";
 import { GoLocation } from "react-icons/go";
 import { GrEmoji } from "react-icons/gr";
 import { Button } from "@chakra-ui/button";
 import { useDispatch, useSelector } from "react-redux";
-import { uploadToCloudinary } from "../../Config/UploadToCloudinary";
 import SpinnerCard from "../Spinner/Spinner";
 import { uploadMediaToCloudinary } from "../../Config/UploadVideoToCloudnary";
 import { createReel } from "../../Redux/Reel/Action";
 
 const CreateReelModal = ({ onOpen, isOpen, onClose }) => {
   const finalRef = React.useRef(null);
-  const [file, setFile] = useState(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [isImageUploaded, setIsImageUploaded] = useState("");
 
@@ -52,10 +48,8 @@ const CreateReelModal = ({ onOpen, isOpen, onClose }) => {
       file &&
       (file.type.startsWith("image/") || file.type.startsWith("video/"))
     ) {
-      setFile(file);
       const reader = new FileReader();
       reader.readAsDataURL(file);
-
       reader.onloadend = function () {
         setVideoUrl(reader.result);
       };
@@ -65,7 +59,6 @@ const CreateReelModal = ({ onOpen, isOpen, onClose }) => {
       setPostData((prevValues) => ({ ...prevValues, video: url }));
       setIsImageUploaded("uploaded");
     } else {
-      setFile(null);
       alert("Please select an image/video file.");
     }
   };
@@ -83,7 +76,6 @@ const CreateReelModal = ({ onOpen, isOpen, onClose }) => {
   };
   function handleClose() {
     onClose();
-    setFile(null);
     setIsDragOver(false);
     setPostData({ video: "", caption: "", location: "" });
     setIsImageUploaded("");
@@ -100,15 +92,15 @@ const CreateReelModal = ({ onOpen, isOpen, onClose }) => {
         <ModalOverlay />
         <ModalContent fontSize={"sm"}>
           <div className="flex justify-between py-1 px-10 items-center">
-            <p>Create New Post</p>
+            <p>Create reel</p>
             <Button
               onClick={handleSubmit}
               className="inline-flex"
-              colorScheme="blue"
+              colorScheme="yellow"
               size={"sm"}
               variant="ghost"
             >
-              Share
+              Publish
             </Button>
           </div>
 
@@ -163,12 +155,13 @@ const CreateReelModal = ({ onOpen, isOpen, onClose }) => {
               <div className="w-[50%]">
                 <div className="flex items-center px-2">
                   <img
-                    className="w-7 h-7 rounded-full"
+                    className="w-7 h-7 rounded-full object-cover"
                     src={
                       user?.reqUser?.image ||
-                      "https://cdn.pixabay.com/photo/2023/02/28/03/42/ibex-7819817_640.jpg"
+                      "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png"
                     }
-                    alt=""
+                    alt={user?.reqUser?.username ? `${user.reqUser.username} profile` : "Your profile"}
+                    decoding="async"
                   />{" "}
                   <p className="font-semibold ml-4">
                     {user?.reqUser?.username}

@@ -47,8 +47,6 @@ public class StoryController {
 
         List<Story> stories = storyService.findStoryByUserId(userId);
 
-        System.out.println("stories userid --------- ");
-
         return new ResponseEntity<List<Story>>(stories, HttpStatus.OK);
     }
 

@@ -1,415 +1,427 @@
-import React, { useEffect, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { 
-  createLearningPlan, 
-  getLearningPlans, 
-  updateLearningPlan, 
+import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  createLearningPlan,
+  getLearningPlans,
+  updateLearningPlan,
   deleteLearningPlan,
   addTopicToPlan,
   updateTopic,
   deleteTopic,
   addResourceToTopic,
   updateResource,
-  deleteResource
-} from '../../Redux/LearningPlan/Action';
-import { Button, Modal, Form, Input, DatePicker, Checkbox, List, Card, Space, message, Collapse, Tag, Alert, Spin } from 'antd';
-import { 
-  PlusOutlined, 
-  EditOutlined, 
-  DeleteOutlined, 
+  deleteResource,
+} from "../../Redux/LearningPlan/Action";
+import {
+  Button,
+  Modal,
+  Form,
+  Input,
+  DatePicker,
+  Checkbox,
+  List,
+  Card,
+  Space,
+  message,
+  Collapse,
+  Tag,
+} from "antd";
+import {
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
   LinkOutlined,
-  FileAddOutlined,
-  BookOutlined
-} from '@ant-design/icons';
-import moment from 'moment';
+} from "@ant-design/icons";
+import moment from "moment";
+import { getAuthToken } from "../../Config/auth";
 import "./LearningPlan.css";
-
 
 const { Panel } = Collapse;
 const { TextArea } = Input;
 
+const friendlyError = "That could not be saved. Please try again.";
+
 const LearningPlan = () => {
   const dispatch = useDispatch();
-  const token = localStorage.getItem("token");
+  const token = getAuthToken();
   const { learningPlan } = useSelector((store) => store);
   const [planForm] = Form.useForm();
   const [topicForm] = Form.useForm();
   const [resourceForm] = Form.useForm();
+  const [modalApi, contextHolder] = Modal.useModal();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activePanelKey, setActivePanelKey] = useState([]);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [planModal, setPlanModal] = useState({
-    visible: false,
-    mode: 'create',
-    currentPlan: null
+    open: false,
+    mode: "create",
+    currentPlan: null,
   });
   const [topicModal, setTopicModal] = useState({
-    visible: false,
-    mode: 'create',
+    open: false,
+    mode: "create",
     currentTopic: null,
-    planId: null
+    planId: null,
   });
   const [resourceModal, setResourceModal] = useState({
-    visible: false,
-    mode: 'create',
+    open: false,
+    mode: "create",
     currentResource: null,
-    topicId: null
+    topicId: null,
   });
 
-  useEffect(() => {
-    let isMounted = true;
-    const fetchData = async () => {
-      try {
-        if (isMounted) setLoading(true);
-        await dispatch(getLearningPlans(token));
-      } catch (err) {
-        if (isMounted) setError("Failed to load learning plans. Please try again.");
-        console.error("Error:", err);
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
+  const loadPlans = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      await dispatch(getLearningPlans(token));
+    } catch {
+      setError("Craft plans could not be loaded.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    if (token) fetchData();
-    
-    return () => {
-      isMounted = false;
-    };
+  useEffect(() => {
+    if (token) loadPlans();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dispatch, token]);
 
   const handleCreatePlan = async (values) => {
     try {
-      await dispatch(createLearningPlan({
-        jwt: token,
-        planData: values
-      }));
-      setPlanModal({...planModal, visible: false});
+      await dispatch(
+        createLearningPlan({
+          jwt: token,
+          planData: values,
+        })
+      );
+      setPlanModal({ ...planModal, open: false });
       planForm.resetFields();
-      message.success('Learning plan created successfully');
-    } catch (err) {
-      message.error(err.message || 'Failed to create learning plan');
+      message.success("Learning plan created");
+    } catch {
+      message.error(friendlyError);
     }
   };
 
   const handleUpdatePlan = async (values) => {
     try {
-      await dispatch(updateLearningPlan({
-        jwt: token,
-        planId: planModal.currentPlan.id,
-        planData: values
-      }));
-      setPlanModal({...planModal, visible: false});
+      await dispatch(
+        updateLearningPlan({
+          jwt: token,
+          planId: planModal.currentPlan.id,
+          planData: values,
+        })
+      );
+      setPlanModal({ ...planModal, open: false });
       planForm.resetFields();
-      message.success('Learning plan updated successfully');
-    } catch (err) {
-      message.error(err.message || 'Failed to update learning plan');
+      message.success("Learning plan updated");
+    } catch {
+      message.error(friendlyError);
     }
   };
 
   const handleDeletePlan = (planId) => {
-    Modal.confirm({
-      title: 'Delete Learning Plan',
-      content: 'Are you sure you want to delete this learning plan?',
-      okText: 'Delete',
-      okType: 'danger',
-      cancelText: 'Cancel',
+    modalApi.confirm({
+      title: "Delete learning plan",
+      content: "This plan, its topics, and resources will be removed.",
+      okText: "Delete",
+      okType: "danger",
+      cancelText: "Cancel",
       async onOk() {
         try {
-          await dispatch(deleteLearningPlan({
-            jwt: token,
-            planId
-          }));
-          message.success('Learning plan deleted successfully');
-        } catch (err) {
-          message.error(err.message || 'Failed to delete learning plan');
+          await dispatch(
+            deleteLearningPlan({
+              jwt: token,
+              planId,
+            })
+          );
+          setSelectedPlan(null);
+          message.success("Learning plan deleted");
+        } catch {
+          message.error(friendlyError);
         }
-      }
+      },
     });
   };
 
   const handleCreateTopic = async (values) => {
     try {
-      await dispatch(addTopicToPlan({
-        jwt: token,
-        planId: topicModal.planId,
-        topicData: {
-          ...values,
-          targetCompletionDate: values.targetCompletionDate?.format('YYYY-MM-DD') || null
-        }
-      }));
-      setTopicModal({...topicModal, visible: false});
+      await dispatch(
+        addTopicToPlan({
+          jwt: token,
+          planId: topicModal.planId,
+          topicData: {
+            ...values,
+            targetCompletionDate: values.targetCompletionDate?.format("YYYY-MM-DD") || null,
+          },
+        })
+      );
+      setTopicModal({ ...topicModal, open: false });
       topicForm.resetFields();
-      message.success('Event added successfully');
-    } catch (err) {
-      message.error(err.message || 'Failed to add Event');
+      message.success("Topic added");
+    } catch {
+      message.error(friendlyError);
     }
   };
 
   const handleUpdateTopic = async (values) => {
     try {
-      await dispatch(updateTopic({
-        jwt: token,
-        topicId: topicModal.currentTopic.id,
-        topicData: {
-          ...values,
-          targetCompletionDate: values.targetCompletionDate?.format('YYYY-MM-DD') || null
-        }
-      }));
-      setTopicModal({...topicModal, visible: false});
+      await dispatch(
+        updateTopic({
+          jwt: token,
+          topicId: topicModal.currentTopic.id,
+          topicData: {
+            ...values,
+            targetCompletionDate: values.targetCompletionDate?.format("YYYY-MM-DD") || null,
+          },
+        })
+      );
+      setTopicModal({ ...topicModal, open: false });
       topicForm.resetFields();
-      message.success('Event updated successfully');
-    } catch (err) {
-      message.error(err.message || 'Failed to update topic');
+      message.success("Topic updated");
+    } catch {
+      message.error(friendlyError);
     }
   };
 
   const handleDeleteTopic = (topicId) => {
-    Modal.confirm({
-      title: 'Delete Event',
-      content: 'Are you sure you want to delete this topic?',
-      okText: 'Delete',
-      okType: 'danger',
-      cancelText: 'Cancel',
+    modalApi.confirm({
+      title: "Delete topic",
+      content: "This topic and its resources will be removed.",
+      okText: "Delete",
+      okType: "danger",
+      cancelText: "Cancel",
       async onOk() {
         try {
-          await dispatch(deleteTopic({
-            jwt: token,
-            topicId
-          }));
-          message.success('Event deleted successfully');
-        } catch (err) {
-          message.error(err.message || 'Failed to delete topic');
+          await dispatch(
+            deleteTopic({
+              jwt: token,
+              topicId,
+            })
+          );
+          message.success("Topic deleted");
+        } catch {
+          message.error(friendlyError);
         }
-      }
+      },
     });
   };
 
   const handleCreateResource = async (values) => {
     try {
-      await dispatch(addResourceToTopic({
-        jwt: token,
-        topicId: resourceModal.topicId,
-        resourceData: values
-      }));
-      setResourceModal({...resourceModal, visible: false});
+      await dispatch(
+        addResourceToTopic({
+          jwt: token,
+          topicId: resourceModal.topicId,
+          resourceData: values,
+        })
+      );
+      setResourceModal({ ...resourceModal, open: false });
       resourceForm.resetFields();
-      message.success('Resource added successfully');
-    } catch (err) {
-      message.error(err.message || 'Failed to add resource');
+      message.success("Resource added");
+    } catch {
+      message.error(friendlyError);
     }
   };
 
   const handleUpdateResource = async (values) => {
     try {
-      await dispatch(updateResource({
-        jwt: token,
-        resourceId: resourceModal.currentResource.id,
-        resourceData: values
-      }));
-      setResourceModal({...resourceModal, visible: false});
+      await dispatch(
+        updateResource({
+          jwt: token,
+          resourceId: resourceModal.currentResource.id,
+          resourceData: values,
+        })
+      );
+      setResourceModal({ ...resourceModal, open: false });
       resourceForm.resetFields();
-      message.success('Resource updated successfully');
-    } catch (err) {
-      message.error(err.message || 'Failed to update resource');
+      message.success("Resource updated");
+    } catch {
+      message.error(friendlyError);
     }
   };
 
   const handleDeleteResource = (resourceId) => {
-    Modal.confirm({
-      title: 'Delete Resource',
-      content: 'Are you sure you want to delete this resource?',
-      okText: 'Delete',
-      okType: 'danger',
-      cancelText: 'Cancel',
+    modalApi.confirm({
+      title: "Delete resource",
+      content: "Remove this resource from the topic?",
+      okText: "Delete",
+      okType: "danger",
+      cancelText: "Cancel",
       async onOk() {
         try {
-          await dispatch(deleteResource({
-            jwt: token,
-            resourceId
-          }));
-          message.success('Resource deleted successfully');
-        } catch (err) {
-          message.error(err.message || 'Failed to delete resource');
+          await dispatch(
+            deleteResource({
+              jwt: token,
+              resourceId,
+            })
+          );
+          message.success("Resource deleted");
+        } catch {
+          message.error(friendlyError);
         }
-      }
+      },
     });
   };
 
-  const showPlanModal = (mode = 'create', plan = null) => {
+  const showPlanModal = (mode = "create", plan = null) => {
     setPlanModal({
-      visible: true,
+      open: true,
       mode,
-      currentPlan: plan
+      currentPlan: plan,
     });
-    if (mode === 'edit') {
+    if (mode === "edit") {
       planForm.setFieldsValue({
         title: plan.title,
-        description: plan.description
+        description: plan.description,
       });
     }
   };
 
-  const showTopicModal = (mode = 'create', topic = null, planId = null) => {
+  const showTopicModal = (mode = "create", topic = null, planId = null) => {
     setTopicModal({
-      visible: true,
+      open: true,
       mode,
       currentTopic: topic,
-      planId
+      planId,
     });
-    if (mode === 'edit') {
+    if (mode === "edit") {
       topicForm.setFieldsValue({
         title: topic.title,
         description: topic.description,
         completed: topic.completed,
-        targetCompletionDate: topic.targetCompletionDate ? moment(topic.targetCompletionDate) : null
+        targetCompletionDate: topic.targetCompletionDate ? moment(topic.targetCompletionDate) : null,
       });
     }
   };
 
-  const showResourceModal = (mode = 'create', resource = null, topicId = null) => {
+  const showResourceModal = (mode = "create", resource = null, topicId = null) => {
     setResourceModal({
-      visible: true,
+      open: true,
       mode,
       currentResource: resource,
-      topicId
+      topicId,
     });
-    if (mode === 'edit') {
+    if (mode === "edit") {
       resourceForm.setFieldsValue({
         url: resource.url,
-        description: resource.description
+        description: resource.description,
       });
     }
   };
 
   const handlePanelChange = (key) => {
-    setActivePanelKey(key);
-    if (key.length > 0) {
-      const planId = key[0];
-      const selected = learningPlan.plans.find(plan => plan.id === planId);
+    const keys = Array.isArray(key) ? key : key ? [String(key)] : [];
+    setActivePanelKey(keys);
+    if (keys.length > 0) {
+      const planId = keys[0];
+      const selected = learningPlan.plans.find((plan) => plan.id.toString() === planId.toString());
       setSelectedPlan(selected);
     } else {
       setSelectedPlan(null);
     }
   };
 
-  if (error) {
-    return (
-      <div className="p-8">
-        <div className="text-center py-10">
-          <Alert message="Error" description={error} type="error" showIcon />
-          <Button 
-            type="primary" 
-            onClick={() => window.location.reload()}
-            className="mt-4"
-          >
-            Retry
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="p-8">
-        <div className="text-center py-10">
-          <Spin size="large" />
-          <p>Loading your learning plans...</p>
-        </div>
-      </div>
-    );
-  }
+  const completedCount = selectedPlan?.topics?.filter((topic) => topic.completed).length || 0;
+  const topicCount = selectedPlan?.topics?.length || 0;
 
   return (
-    <div className="p-8">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold flex items-center">
-          <BookOutlined className="mr-2" /> Learn About NightLife Photography 
-        </h1>
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={() => showPlanModal()}
-        >
-          New Learning Plan
-        </Button>
-      </div>
-
-      {learningPlan.plans?.length === 0 ? (
-        <div className="text-center py-10 border-2 border-dashed rounded-lg">
-          <FileAddOutlined className="text-4xl text-gray-400 mb-4" />
-          <p className="text-lg text-gray-600">No learning plans yet</p>
-          <Button 
-            type="primary" 
-            className="mt-4"
-            onClick={() => showPlanModal()}
-          >
-            Create Your First Plan
-          </Button>
+    <div className="nl-craft">
+      {contextHolder}
+      <header className="nl-craft-header">
+        <div>
+          <p className="nl-auth-kicker" style={{ textAlign: "left" }}>
+            Craft
+          </p>
+          <h1>Night photography craft</h1>
+          <p>Build learning plans, work through topics, and keep the resources you return to after dark.</p>
         </div>
-      ) : (
+        <Button type="primary" icon={<PlusOutlined />} onClick={() => showPlanModal()}>
+          New plan
+        </Button>
+      </header>
+
+      {error && (
+        <section className="nl-empty nl-card">
+          <h2>Craft could not be loaded.</h2>
+          <p>Something went wrong while fetching your learning plans.</p>
+          <div className="nl-empty-actions">
+            <Button type="primary" onClick={loadPlans}>
+              Try again
+            </Button>
+          </div>
+        </section>
+      )}
+
+      {!error && loading && (
+        <div className="nl-craft-status" aria-busy="true" aria-label="Loading craft plans">
+          <div className="nl-skeleton" style={{ height: "4.5rem", marginBottom: "0.75rem" }} />
+          <div className="nl-skeleton" style={{ height: "4.5rem", marginBottom: "0.75rem" }} />
+          <div className="nl-skeleton" style={{ height: "4.5rem" }} />
+        </div>
+      )}
+
+      {!error && !loading && learningPlan.plans?.length === 0 && (
+        <section className="nl-empty nl-card nl-craft-empty">
+          <h2>No learning plans yet.</h2>
+          <p>Start a plan for a technique you want to practice — long exposure, city light, or quiet scenes.</p>
+          <div className="nl-empty-actions">
+            <Button type="primary" onClick={() => showPlanModal()}>
+              Create a plan
+            </Button>
+          </div>
+        </section>
+      )}
+
+      {!error && !loading && learningPlan.plans?.length > 0 && (
         <>
-          <Collapse 
-            activeKey={activePanelKey}
-            onChange={handlePanelChange}
-            className="mb-6"
-          >
-            {learningPlan.plans?.map((plan) => (
-              <Panel 
+          <Collapse activeKey={activePanelKey} onChange={handlePanelChange}>
+            {learningPlan.plans.map((plan) => (
+              <Panel
                 header={
-                  <div className="flex justify-between items-center">
-                    <span className="font-medium">{plan.title}</span>
-                    <div>
-                      <Tag color="blue">{plan.topics?.length || 0} Events</Tag>
-                    </div>
+                  <div className="nl-craft-plan-title">
+                    <span>{plan.title}</span>
+                    <Tag>{plan.topics?.length || 0} topics</Tag>
                   </div>
                 }
                 key={plan.id.toString()}
                 extra={
-                  <Space>
+                  <Space onClick={(event) => event.stopPropagation()}>
                     <Button
                       size="small"
                       icon={<PlusOutlined />}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        showTopicModal('create', null, plan.id);
-                      }}
+                      aria-label="Add topic"
+                      onClick={() => showTopicModal("create", null, plan.id)}
                     />
                     <Button
                       size="small"
                       icon={<EditOutlined />}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        showPlanModal('edit', plan);
-                      }}
+                      aria-label="Edit plan"
+                      onClick={() => showPlanModal("edit", plan)}
                     />
                     <Button
                       size="small"
                       icon={<DeleteOutlined />}
                       danger
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeletePlan(plan.id);
-                      }}
+                      aria-label="Delete plan"
+                      onClick={() => handleDeletePlan(plan.id)}
                     />
                   </Space>
                 }
               >
-                <div className="mb-4">
-                  <p className="text-gray-700">{plan.description}</p>
-                </div>
+                {plan.description && <p className="nl-craft-muted">{plan.description}</p>}
 
                 <div className="mt-4">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="font-semibold text-lg">Events</h3>
+                  <div className="nl-craft-section-head">
+                    <h3>Topics</h3>
                     <Button
                       type="primary"
                       size="small"
                       icon={<PlusOutlined />}
-                      onClick={() => showTopicModal('create', null, plan.id)}
+                      onClick={() => showTopicModal("create", null, plan.id)}
                     >
-                      Add Event
+                      Add topic
                     </Button>
                   </div>
 
@@ -420,26 +432,27 @@ const LearningPlan = () => {
                         <List.Item className="!px-0">
                           <Card
                             size="small"
-                            className="w-full"
+                            className="nl-craft-topic-card"
                             title={
                               <div className="flex items-center">
-                                <Checkbox 
+                                <Checkbox
                                   checked={topic.completed}
                                   className="mr-2"
-                                  onChange={(e) => {
-                                    dispatch(updateTopic({
-                                      jwt: token,
-                                      topicId: topic.id,
-                                      topicData: {
-                                        ...topic,
-                                        completed: e.target.checked
-                                      }
-                                    }));
+                                  aria-label={`Mark ${topic.title} complete`}
+                                  onChange={(event) => {
+                                    dispatch(
+                                      updateTopic({
+                                        jwt: token,
+                                        topicId: topic.id,
+                                        topicData: {
+                                          ...topic,
+                                          completed: event.target.checked,
+                                        },
+                                      })
+                                    );
                                   }}
                                 />
-                                <span className={topic.completed ? "line-through" : ""}>
-                                  {topic.title}
-                                </span>
+                                <span className={topic.completed ? "line-through" : ""}>{topic.title}</span>
                               </div>
                             }
                             extra={
@@ -447,66 +460,65 @@ const LearningPlan = () => {
                                 <Button
                                   size="small"
                                   icon={<PlusOutlined />}
-                                  onClick={() => showResourceModal('create', null, topic.id)}
+                                  aria-label="Add resource"
+                                  onClick={() => showResourceModal("create", null, topic.id)}
                                 />
                                 <Button
                                   size="small"
                                   icon={<EditOutlined />}
-                                  onClick={() => showTopicModal('edit', topic, plan.id)}
+                                  aria-label="Edit topic"
+                                  onClick={() => showTopicModal("edit", topic, plan.id)}
                                 />
                                 <Button
                                   size="small"
                                   icon={<DeleteOutlined />}
                                   danger
+                                  aria-label="Delete topic"
                                   onClick={() => handleDeleteTopic(topic.id)}
                                 />
                               </Space>
                             }
                           >
-                            <div className="mb-2">
-                              <p className="text-gray-600">{topic.description}</p>
-                              {topic.targetCompletionDate && (
-                                <div className="mt-2">
-                                  <Tag color="orange">
-                                    Target: {new Date(topic.targetCompletionDate).toLocaleDateString()}
-                                  </Tag>
-                                  {new Date(topic.targetCompletionDate) < new Date() && !topic.completed && (
-                                    <Tag color="red" className="ml-2">Overdue</Tag>
-                                  )}
-                                </div>
-                              )}
-                            </div>
+                            {topic.description && <p className="nl-craft-muted">{topic.description}</p>}
+                            {topic.targetCompletionDate && (
+                              <div className="mt-2">
+                                <Tag>Target: {new Date(topic.targetCompletionDate).toLocaleDateString()}</Tag>
+                                {new Date(topic.targetCompletionDate) < new Date() && !topic.completed && (
+                                  <Tag className="ml-2 ant-tag-red">Past target</Tag>
+                                )}
+                              </div>
+                            )}
 
                             {topic.resources?.length > 0 && (
                               <div className="mt-4">
-                                <h4 className="font-medium mb-2">Resources:</h4>
+                                <h4 className="font-medium mb-2">Resources</h4>
                                 <List
                                   size="small"
                                   dataSource={topic.resources}
                                   renderItem={(resource) => (
                                     <List.Item className="!px-0">
-                                      <div className="flex justify-between items-center w-full">
-                                        <div className="flex items-center">
-                                          <LinkOutlined className="mr-2 text-blue-500" />
-                                          <a 
-                                            href={resource.url} 
-                                            target="_blank" 
-                                            rel="noopener noreferrer"
-                                            className="text-blue-500"
-                                          >
-                                            {resource.description || resource.url}
-                                          </a>
-                                        </div>
+                                      <div className="nl-craft-resource">
+                                        <a
+                                          href={resource.url}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="nl-craft-link"
+                                        >
+                                          <LinkOutlined className="mr-2" aria-hidden="true" />
+                                          {resource.description || resource.url}
+                                        </a>
                                         <Space>
                                           <Button
                                             size="small"
                                             icon={<EditOutlined />}
-                                            onClick={() => showResourceModal('edit', resource, topic.id)}
+                                            aria-label="Edit resource"
+                                            onClick={() => showResourceModal("edit", resource, topic.id)}
                                           />
                                           <Button
                                             size="small"
                                             icon={<DeleteOutlined />}
                                             danger
+                                            aria-label="Delete resource"
                                             onClick={() => handleDeleteResource(resource.id)}
                                           />
                                         </Space>
@@ -521,15 +533,14 @@ const LearningPlan = () => {
                       )}
                     />
                   ) : (
-                    <div className="text-center py-4 border-2 border-dashed rounded-lg">
-                      <p className="text-gray-500">No Events yet</p>
+                    <div className="nl-craft-inline-empty">
+                      <p className="nl-craft-muted">No topics yet</p>
                       <Button
-                        type="dashed"
                         className="mt-2"
                         icon={<PlusOutlined />}
-                        onClick={() => showTopicModal('create', null, plan.id)}
+                        onClick={() => showTopicModal("create", null, plan.id)}
                       >
-                        Add First Event
+                        Add a topic
                       </Button>
                     </div>
                   )}
@@ -539,148 +550,91 @@ const LearningPlan = () => {
           </Collapse>
 
           {selectedPlan && (
-            <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold">{selectedPlan.title}</h2>
-                <Space>
-                  <Button
-                    type="primary"
-                    icon={<PlusOutlined />}
-                    onClick={() => showTopicModal('create', null, selectedPlan.id)}
-                  >
-                    Add Event
-                  </Button>
-                  <Button
-                    icon={<EditOutlined />}
-                    onClick={() => showPlanModal('edit', selectedPlan)}
-                  >
-                    Edit Plan
-                  </Button>
-                </Space>
-              </div>
-              <p className="text-gray-700 mb-4">{selectedPlan.description}</p>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-white p-4 rounded-lg shadow">
-                  <h3 className="font-medium mb-2">Completion Progress</h3>
-                  {selectedPlan.topics?.length > 0 ? (
-                    <>
-                      <div className="mb-2">
-                        <span className="text-gray-600">
-                          {selectedPlan.topics.filter(t => t.completed).length} of {selectedPlan.topics.length} topics completed
-                        </span>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-2.5">
-                        <div 
-                          className="bg-blue-600 h-2.5 rounded-full" 
-                          style={{ 
-                            width: `${(selectedPlan.topics.filter(t => t.completed).length / selectedPlan.topics.length) * 100}%` 
-                          }}
-                        ></div>
-                      </div>
-                    </>
-                  ) : (
-                    <p className="text-gray-500">No Events to track progress</p>
-                  )}
+            <section className="nl-craft-selected nl-card">
+              <h2>{selectedPlan.title}</h2>
+              {selectedPlan.description && <p className="nl-craft-muted mb-4">{selectedPlan.description}</p>}
+              <p className="nl-craft-count">
+                {topicCount > 0
+                  ? `${completedCount} of ${topicCount} topics completed`
+                  : "No topics to track yet"}
+              </p>
+              {topicCount > 0 && (
+                <div className="nl-craft-bar" aria-hidden="true">
+                  <span style={{ width: `${(completedCount / topicCount) * 100}%` }} />
                 </div>
-                
-                <div className="bg-white p-4 rounded-lg shadow">
-                  <h3 className="font-medium mb-2">Quick Actions</h3>
-                  <Space>
-                    <Button
-                      type="primary"
-                      icon={<PlusOutlined />}
-                      onClick={() => showTopicModal('create', null, selectedPlan.id)}
-                    >
-                      Add Topic
-                    </Button>
-                    <Button
-                      icon={<LinkOutlined />}
-                      onClick={() => {
-                        if (selectedPlan.topics?.length > 0) {
-                          showResourceModal('create', null, selectedPlan.topics[0].id);
-                        }
-                      }}
-                      disabled={!selectedPlan.topics || selectedPlan.topics.length === 0}
-                    >
-                      Add Resource
-                    </Button>
-                  </Space>
-                </div>
-              </div>
-            </div>
+              )}
+            </section>
           )}
         </>
       )}
 
       <Modal
-        title={planModal.mode === 'create' ? 'Create Learning Plan' : 'Edit Learning Plan'}
-        visible={planModal.visible}
-        onCancel={() => setPlanModal({...planModal, visible: false})}
+        title={planModal.mode === "create" ? "Create learning plan" : "Edit learning plan"}
+        open={planModal.open}
+        onCancel={() => setPlanModal({ ...planModal, open: false })}
         onOk={() => planForm.submit()}
+        okText={planModal.mode === "create" ? "Create" : "Save"}
         destroyOnClose
         width={600}
       >
-        <Form 
-          form={planForm} 
-          onFinish={planModal.mode === 'create' ? handleCreatePlan : handleUpdatePlan}
+        <Form
+          form={planForm}
+          onFinish={planModal.mode === "create" ? handleCreatePlan : handleUpdatePlan}
           layout="vertical"
         >
-          <Form.Item 
-            name="title" 
-            label="Plan Title" 
+          <Form.Item
+            name="title"
+            label="Plan title"
             rules={[
-              { required: true, message: 'Please input the plan title!' },
-              { max: 100, message: 'Title must be less than 100 characters' }
+              { required: true, message: "Please enter a plan title" },
+              { max: 100, message: "Title must be less than 100 characters" },
             ]}
           >
-            <Input placeholder="Enter plan title" />
+            <Input placeholder="Long exposure after dark" />
           </Form.Item>
-          <Form.Item 
-            name="description" 
+          <Form.Item
+            name="description"
             label="Description"
-            rules={[{ max: 500, message: 'Description must be less than 500 characters' }]}
+            rules={[{ max: 500, message: "Description must be less than 500 characters" }]}
           >
-            <TextArea rows={4} placeholder="Describe what you want to learn" />
+            <TextArea rows={4} placeholder="What you want to practice, and why" />
           </Form.Item>
         </Form>
       </Modal>
 
       <Modal
-        title={topicModal.mode === 'create' ? 'Add New Event' : 'Edit Topic'}
-        visible={topicModal.visible}
-        onCancel={() => setTopicModal({...topicModal, visible: false})}
+        title={topicModal.mode === "create" ? "Add topic" : "Edit topic"}
+        open={topicModal.open}
+        onCancel={() => setTopicModal({ ...topicModal, open: false })}
         onOk={() => topicForm.submit()}
+        okText={topicModal.mode === "create" ? "Add topic" : "Save"}
         destroyOnClose
         width={600}
       >
-        <Form 
-          form={topicForm} 
-          onFinish={topicModal.mode === 'create' ? handleCreateTopic : handleUpdateTopic}
+        <Form
+          form={topicForm}
+          onFinish={topicModal.mode === "create" ? handleCreateTopic : handleUpdateTopic}
           layout="vertical"
         >
-          <Form.Item 
-            name="title" 
-            label="Event Title" 
+          <Form.Item
+            name="title"
+            label="Topic title"
             rules={[
-              { required: true, message: 'Please input the Event title!' },
-              { max: 100, message: 'Title must be less than 100 characters' }
+              { required: true, message: "Please enter a topic title" },
+              { max: 100, message: "Title must be less than 100 characters" },
             ]}
           >
-            <Input placeholder="Enter Event title" />
+            <Input placeholder="Metering city light" />
           </Form.Item>
-          <Form.Item 
-            name="description" 
+          <Form.Item
+            name="description"
             label="Description"
-            rules={[{ max: 500, message: 'Description must be less than 500 characters' }]}
+            rules={[{ max: 500, message: "Description must be less than 500 characters" }]}
           >
-            <TextArea rows={3} placeholder="Describe what this Event covers" />
+            <TextArea rows={3} placeholder="What this topic covers" />
           </Form.Item>
-          <Form.Item name="targetCompletionDate" label="Target Completion Date">
-            <DatePicker 
-              style={{ width: '100%' }} 
-              placeholder="Select target date"
-            />
+          <Form.Item name="targetCompletionDate" label="Target completion date">
+            <DatePicker style={{ width: "100%" }} placeholder="Select a date" />
           </Form.Item>
           <Form.Item name="completed" valuePropName="checked">
             <Checkbox>Mark as completed</Checkbox>
@@ -689,37 +643,35 @@ const LearningPlan = () => {
       </Modal>
 
       <Modal
-        title={resourceModal.mode === 'create' ? 'Add New Resource' : 'Edit Resource'}
-        visible={resourceModal.visible}
-        onCancel={() => setResourceModal({...resourceModal, visible: false})}
+        title={resourceModal.mode === "create" ? "Add resource" : "Edit resource"}
+        open={resourceModal.open}
+        onCancel={() => setResourceModal({ ...resourceModal, open: false })}
         onOk={() => resourceForm.submit()}
+        okText={resourceModal.mode === "create" ? "Add resource" : "Save"}
         destroyOnClose
         width={600}
       >
-        <Form 
-          form={resourceForm} 
-          onFinish={resourceModal.mode === 'create' ? handleCreateResource : handleUpdateResource}
+        <Form
+          form={resourceForm}
+          onFinish={resourceModal.mode === "create" ? handleCreateResource : handleUpdateResource}
           layout="vertical"
         >
-          <Form.Item 
-            name="url" 
-            label="Resource URL" 
+          <Form.Item
+            name="url"
+            label="Resource URL"
             rules={[
-              { required: true, message: 'Please input the resource URL!' },
-              { type: 'url', message: 'Please enter a valid URL!' }
+              { required: true, message: "Please enter a URL" },
+              { type: "url", message: "Enter a valid URL" },
             ]}
           >
-            <Input 
-              prefix={<LinkOutlined />} 
-              placeholder="https://example.com/resource" 
-            />
+            <Input prefix={<LinkOutlined />} placeholder="https://" />
           </Form.Item>
-          <Form.Item 
-            name="description" 
-            label="Description (Optional)"
-            rules={[{ max: 200, message: 'Description must be less than 200 characters' }]}
+          <Form.Item
+            name="description"
+            label="Description (optional)"
+            rules={[{ max: 200, message: "Description must be less than 200 characters" }]}
           >
-            <Input placeholder="Brief description of the resource" />
+            <Input placeholder="Brief note about this resource" />
           </Form.Item>
         </Form>
       </Modal>

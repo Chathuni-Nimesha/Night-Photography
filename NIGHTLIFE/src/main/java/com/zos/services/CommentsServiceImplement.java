@@ -70,7 +70,7 @@ public class CommentsServiceImplement implements CommentService {
             notification.setMessage(user.getUsername() + " commented on your post");
             notification.setType("COMMENT");
             notification.setPostId(postId);
-            notification.setCommentId(comment.getId());
+            notification.setCommentId(newComment.getId());
             notificationService.createNotification(notification, post.getUser().getId());
         }
 
@@ -103,7 +103,6 @@ public class CommentsServiceImplement implements CommentService {
         userDto.setUserImage(user.getImage());
 
         comment.getLikedByUsers().add(userDto);
-        System.out.println(("like ------- " + " ------ " + comment));
         return repo.save(comment);
 
     }
@@ -114,7 +113,7 @@ public class CommentsServiceImplement implements CommentService {
         User user = userService.findUserById(userId);
         Comments comment = findCommentById(commentId);
 
-        comment.getLikedByUsers().remove(user);
+        comment.getLikedByUsers().removeIf(dto -> userId.equals(dto.getId()));
 
         return repo.save(comment);
 
@@ -122,26 +121,31 @@ public class CommentsServiceImplement implements CommentService {
 
 
     @Override
-    public String deleteCommentById(Integer commentId) throws CommentException {
+    public String deleteCommentById(Integer commentId, Integer userId) throws CommentException {
         Comments comment = findCommentById(commentId);
-
-        System.out.println("find by id delete-------- " + comment.getContent());
-
+        assertCommentOwner(comment, userId);
         repo.deleteById(comment.getId());
-
         return "Comment Deleted Successfully";
     }
 
 
     @Override
-    public String editComment(Comments comment, Integer commentId) throws CommentException {
+    public String editComment(Comments comment, Integer commentId, Integer userId) throws CommentException {
         Comments isComment = findCommentById(commentId);
+        assertCommentOwner(isComment, userId);
 
         if (comment.getContent() != null) {
             isComment.setContent(comment.getContent());
         }
         repo.save(isComment);
         return "Comment Updated Successfully";
+    }
+
+    private void assertCommentOwner(Comments comment, Integer userId) {
+        Integer ownerId = comment.getUserDto() != null ? comment.getUserDto().getId() : null;
+        if (ownerId == null || userId == null || !ownerId.equals(userId)) {
+            throw new com.zos.exception.ForbiddenException("You cannot change this comment.");
+        }
     }
 
 

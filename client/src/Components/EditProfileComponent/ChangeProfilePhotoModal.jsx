@@ -1,29 +1,25 @@
 import {
-  Button,
   Modal,
   ModalBody,
-  ModalCloseButton,
   ModalContent,
-  ModalFooter,
   ModalHeader,
   ModalOverlay,
-  useDisclosure,
 } from "@chakra-ui/react";
 
 
-function ChangeProfilePhotoModal({ isOpen, onOpen, onClose,handleProfileImageChange }) {
+function ChangeProfilePhotoModal({ isOpen, onClose, handleProfileImageChange }) {
   return (
     <>
       <Modal onClose={onClose} isOpen={isOpen} isCentered>
         <ModalOverlay />
         <ModalContent>
-          <ModalHeader textAlign={"center"}>Modal Title</ModalHeader>
+          <ModalHeader textAlign={"center"}>Change profile photo</ModalHeader>
 
           <ModalBody>
             <div className="flex flex-col items-center">
               <label
-                for="profileImage"
-                className="font-bold py-3 text-blue-600 text-center cursor-pointer text-xs w-full"
+                htmlFor="profileImage"
+                className="nl-link py-3 text-center cursor-pointer text-xs w-full"
               >
                 Upload Photo
               </label>

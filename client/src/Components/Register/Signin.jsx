@@ -3,145 +3,157 @@ import {
   Button,
   FormControl,
   FormErrorMessage,
+  FormLabel,
   Input,
   useToast,
 } from "@chakra-ui/react";
 import { Field, Form, Formik } from "formik";
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import * as Yup from "yup";
 import { signinAction } from "../../Redux/Auth/Action";
 import { getUserProfileAction } from "../../Redux/User/Action";
-import wizDriveImage from '../../assets/IMG_5544.png';
-
+import { BASE_URL } from "../../Config/api";
+import { getAuthToken } from "../../Config/auth";
+import BrandMark from "../Brand/BrandMark";
+import nightlifeMark from "../../assets/IMG_5544.png";
 
 const validationSchema = Yup.object().shape({
-  email: Yup.string().email("Invalid email address").required("Required"),
+  email: Yup.string().email("Enter a valid email address").required("Email is required"),
   password: Yup.string()
     .min(8, "Password must be at least 8 characters")
-    .required("Required"),
+    .required("Password is required"),
 });
 
 const Signin = () => {
   const initialValues = { email: "", password: "" };
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { user,signin } = useSelector((store) => store);
+  const { user, signin } = useSelector((store) => store);
   const toast = useToast();
-
-  const token = localStorage.getItem("token");
-  console.log("token in signin page ",token)
-  console.log("reqUser -: ", user);
-  useEffect(() => {
-    if (token) dispatch(getUserProfileAction(token || signin));
-  }, [signin,token]);
+  const token = getAuthToken();
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
-    if (user?.reqUser?.username && token) {
-      navigate(`/${user.reqUser?.username}`);
+    if (searchParams.get("error")) {
       toast({
-        title: "signin successfull",
-        status: "success",
-        duration: 8000,
+        title: "Google sign-in could not be completed",
+        status: "error",
+        duration: 4000,
         isClosable: true,
       });
     }
-  }, [user.reqUser]);
+  }, [searchParams, toast]);
 
-  const handleSubmit = (values, actions) => {
-    console.log(values);
-    dispatch(signinAction(values));
+  useEffect(() => {
+    if (token) dispatch(getUserProfileAction(token || signin));
+  }, [signin, token, dispatch]);
+
+  useEffect(() => {
+    if (user?.reqUser?.username && token) {
+      navigate("/");
+      toast({
+        title: "Signed in",
+        status: "success",
+        duration: 4000,
+        isClosable: true,
+      });
+    }
+  }, [user.reqUser, token, navigate, toast]);
+
+  const handleSubmit = async (values, actions) => {
+    const result = await dispatch(signinAction(values));
+    if (!result?.ok) {
+      toast({
+        title: "Sign in failed",
+        description: "Check your email and password.",
+        status: "error",
+        duration: 4000,
+        isClosable: true,
+      });
+    }
     actions.setSubmitting(false);
   };
 
   return (
-    <div className=" ">
-      <div className="border border-slate-300">
-        <Box p={8} display="flex" flexDirection="column" alignItems="center">
-        <img
-          className="border border-red-800 mb-5"
-          src={wizDriveImage}
-          alt=""
-        />
-        
-        <Formik
-          initialValues={initialValues}
-          onSubmit={handleSubmit}
-          validationSchema={validationSchema}
-        >
-          {(formikProps) => (
-            <Form className="w-full">
-              <Field name="email">
-                {({ field, form }) => (
-                  <FormControl
-                    isInvalid={form.errors.email && form.touched.email}
-                    mb={4}
-                  >
-                    <Input
-                      className="w-full"
-                      {...field}
-                      id="email"
-                      placeholder="Enter Your Email"
-                    />
-                    <FormErrorMessage>{form.errors.email}</FormErrorMessage>
-                  </FormControl>
-                )}
-              </Field>
+    <Box display="flex" flexDirection="column" alignItems="center">
+      <img className="nl-auth-logo" src={nightlifeMark} alt="Nightlife Photography" />
+      <BrandMark />
+      <p className="nl-auth-kicker">Night photography, shared</p>
+      <h1 id="auth-title" className="nl-auth-title">
+        Welcome back
+      </h1>
+      <p className="nl-auth-copy">Long exposure, city light, quiet frames.</p>
 
-              <Field name="password">
-                {({ field, form }) => (
-                  <FormControl
-                    isInvalid={form.errors.password && form.touched.password}
-                    mb={4}
-                  >
-                    <Input
-                      {...field}
-                      type="password"
-                      id="password"
-                      placeholder="Enter Your Password"
-                    />
-                    <FormErrorMessage>{form.errors.password}</FormErrorMessage>
-                  </FormControl>
-                )}
-              </Field>
-              <p className="text-center">
-                
-              </p>
-              <p className="mt-5 text-center">
-              </p>
-              <Button
-                className="w-full"
-                mt={4}
-                colorScheme="blue"
-                type="submit"
-                isLoading={formikProps.isSubmitting}
-              >
-                Sign In
-              </Button>
+      <Formik initialValues={initialValues} onSubmit={handleSubmit} validationSchema={validationSchema}>
+        {(formikProps) => (
+          <Form className="w-full">
+            <Field name="email">
+              {({ field, form }) => (
+                <FormControl isInvalid={form.errors.email && form.touched.email} mb={4}>
+                  <FormLabel htmlFor="email">Email</FormLabel>
+                  <Input {...field} id="email" type="email" autoComplete="email" placeholder="you@email.com" />
+                  <FormErrorMessage>{form.errors.email}</FormErrorMessage>
+                </FormControl>
+              )}
+            </Field>
 
-              <Button
-                as="a"
-                href="http://localhost:5454/oauth2/authorization/google"
-                colorScheme="red"
-                mt={4}
-                width="100%"
-              >
-                Sign in with Google
-              </Button>
+            <Field name="password">
+              {({ field, form }) => (
+                <FormControl isInvalid={form.errors.password && form.touched.password} mb={4}>
+                  <FormLabel htmlFor="password">Password</FormLabel>
+                  <Input
+                    {...field}
+                    type="password"
+                    id="password"
+                    autoComplete="current-password"
+                    placeholder="Enter your password"
+                  />
+                  <FormErrorMessage>{form.errors.password}</FormErrorMessage>
+                </FormControl>
+              )}
+            </Field>
 
+            <Button
+              className="nl-btn-primary"
+              width="100%"
+              mt={2}
+              type="submit"
+              isLoading={formikProps.isSubmitting}
+              bg="nightlife.accent"
+              color="nightlife.bg"
+              _hover={{ bg: "#d4b27c" }}
+              borderRadius="2px"
+            >
+              Sign in
+            </Button>
 
-            </Form>
-          )}
-        </Formik>
-      </Box>
+            <Button
+              as="a"
+              href={`${BASE_URL}/oauth2/authorization/google`}
+              className="nl-btn-ghost"
+              mt={3}
+              width="100%"
+              variant="outline"
+              borderColor="var(--nl-border)"
+              color="var(--nl-text)"
+              borderRadius="2px"
+              _hover={{ borderColor: "nightlife.accent", color: "nightlife.accent", bg: "transparent" }}
+            >
+              Continue with Google
+            </Button>
+          </Form>
+        )}
+      </Formik>
 
-      </div>
-      
-      <div className="w-full border border-slate-300 mt-5">
-<p className="text-center py-2">If You Don't Have Already Account <span onClick={()=>navigate("/signup")} className="ml-2 text-blue-700 cursor-pointer">Sign Up</span></p>
-      </div>
-    </div>
+      <p className="nl-auth-switch">
+        New to Nightlife?{" "}
+        <Link to="/signup" className="nl-link">
+          Create an account
+        </Link>
+      </p>
+    </Box>
   );
 };
 
