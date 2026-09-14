@@ -268,26 +268,9 @@ Most `/api/**` routes require a valid JWT. Exact paths live under `NIGHTLIFE/src
 
 ---
 
-## Known Limitations / Future Improvements
-
-- Not deployed; intended for local run and portfolio review
-- Schema managed with Hibernate `ddl-auto=update` (no Flyway/Liquibase migrations yet)
-- Email/password login uses HTTP Basic to obtain the JWT
-- Google OAuth works as a local integration path, not a production provider setup
-- Stories and reels are less feature-complete than posts
-- Small automated backend suite; no dedicated frontend tests
-- No rate limiting; notifications refresh without a dedicated real-time channel
-
-Possible later work: hosted deployment with env-based CORS, versioned migrations, JSON login, stronger story/reel parity, and broader test coverage.
-
----
-
 ## Author
 
 ### Chathuni Nimesha
 
-Software Engineer | Full-Stack Developer
-
-- GitHub: [https://github.com/Chathuni-Nimesha](https://github.com/Chathuni-Nimesha)
 - Portfolio: [https://chathuni-nimesha.github.io/](https://chathuni-nimesha.github.io/)
 - Behance: [https://www.behance.net/chathuninimesha](https://www.behance.net/chathuninimesha)
