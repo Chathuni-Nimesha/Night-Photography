@@ -151,14 +151,6 @@ NightPhotography/
 
 ---
 
-## Screenshots
-
-Selected UI screenshots are maintained separately as portfolio documentation. Repository screenshot assets are intentionally excluded from the source repository to keep the codebase focused.
-
-See [docs/screenshots/README.md](docs/screenshots/README.md) for expected capture names if you add local screenshots for your own portfolio materials.
-
----
-
 ## Local Development
 
 Prerequisites: **Node.js**, **Java 17+**, **MySQL** (this project uses XAMPP MySQL on port **3308**), and a Cloudinary cloud with unsigned upload presets for local media uploads.
