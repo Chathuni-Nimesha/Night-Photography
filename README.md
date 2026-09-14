@@ -273,4 +273,3 @@ Most `/api/**` routes require a valid JWT. Exact paths live under `NIGHTLIFE/src
 ### Chathuni Nimesha
 
 - Portfolio: [https://chathuni-nimesha.github.io/](https://chathuni-nimesha.github.io/)
-- Behance: [https://www.behance.net/chathuninimesha1](https://www.behance.net/chathuninimesha1)
