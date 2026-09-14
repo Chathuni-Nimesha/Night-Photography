@@ -6,7 +6,7 @@ Nightlife is a full-stack photography-focused social platform that enables users
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.0.2-brightgreen?style=flat-square)
 ![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black)
 ![MySQL](https://img.shields.io/badge/MySQL-8-4479A1?style=flat-square&logo=mysql&logoColor=white)
-![Status](https://img.shields.io/badge/Status-Portfolio%20Project-lightgrey?style=flat-square)
+![Status](https://img.shields.io/badge/Status-Payment%20Project-lightgrey?style=flat-square)
 
 ---
 
