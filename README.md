@@ -1,226 +1,178 @@
 # Nightlife
 
-Full-stack web app for night photographers: publish frames, follow other members, and interact through likes, comments, saves, and activity — all persisted in MySQL. This is a **portfolio project**, not a static photography site and not a hosted production product.
+Nightlife is a full-stack photography-focused social platform that enables users to share visual content, interact with photographers, discover content, and manage learning and progress features. Built as a portfolio software-engineering project, it pairs a React client with a Spring Boot REST API and MySQL persistence, with media uploaded through Cloudinary.
 
-Members sign in, upload media to Cloudinary, and the Spring Boot API stores URLs plus the social graph. The feed is real user data, not mock posts.
-
----
-
-## Purpose
-
-Give night photographers a focused community to share work and get feedback from other signed-in users. Every post, like, comment, save, and follow is written to the database and visible to other members.
+![Java](https://img.shields.io/badge/Java-17-orange?style=flat-square)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.0.2-brightgreen?style=flat-square)
+![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black)
+![MySQL](https://img.shields.io/badge/MySQL-8-4479A1?style=flat-square&logo=mysql&logoColor=white)
+![Status](https://img.shields.io/badge/Status-Portfolio%20Project-lightgrey?style=flat-square)
 
 ---
 
-## Key features
+## Overview
 
-Implemented in the current codebase:
+Nightlife centers on night-photography style sharing: members register, maintain profiles, and publish posts with captions, locations, and Cloudinary-hosted media. Other members discover work through Explore and search, then engage with likes, comments, saves, and follows—all persisted through the API and MySQL.
 
-- Email/password registration and login; JWT on API requests
-- Profile management (edit profile, bio, avatar upload)
-- Post create / edit / delete with Cloudinary image upload, caption, and location
-- Home following feed and Explore grid
-- User search
+Beyond the core feed, the platform includes stories and reels for short-form media, in-app activity notifications (likes, comments, follows), and learning surfaces for structured plans (topics and resources) plus personal progress notes. The application is designed for local full-stack development and demonstration; it is not presented as a hosted production SaaS.
+
+---
+
+## Key Features
+
+### Authentication & Security
+
+- Email/password registration and login
+- JWT issued after authentication and sent on API requests
+- Protected `/api/**` routes via Spring Security
+- Ownership checks on mutating operations (posts, comments, notifications, reels, learning plans)
+- Public user responses use a DTO that omits sensitive fields such as `savedPost`
+- Configuration and secrets loaded from environment variables (not hard-coded)
+
+### Photography & Content
+
+- Create, edit, and delete posts with captions and location
+- Image and video upload via unsigned Cloudinary presets; API stores returned URLs
 - Like / unlike posts
-- Comments: create, edit, delete, like/unlike
-- Save / unsave; Saved tab on the owner’s profile only
-- Follow / unfollow
-- Activity notifications (like, comment, follow) with unread badge, mark-read, delete, and `/p/:postId` deep links
+- Comments: create, edit, delete, and like
+- Save / unsave posts (Saved visible on the owner’s profile)
+- Follow / unfollow users
 - Stories: create and view by user
 - Reels: upload and watch (play / mute)
-- Craft: learning plans with topics and resources
-- Progress notes
-- Responsive layout (desktop sidebar, mobile navigation)
-- Protected routes and 401 handling that clears a stale session
 
-**Partially implemented (honest):**
+### Discovery & Social
 
-- Google OAuth **code path** exists (backend + frontend). It is **not** production-configured; local Google credentials are required to try it.
-- Stories: create/view work; following-story aggregation is thin (no dedicated following-stories API).
-- Reels: create and viewer only — no reel likes/comments; reel delete exists on the API but not in the UI; profile has no per-user reels grid.
-- Website can be saved on the profile form; it is not shown on the public profile card.
+- Explore grid for broader content discovery
+- User search
+- Profile views with posts and (for the owner) Saved
+- Activity notifications with unread handling, mark-read, delete, and post deep links (`/p/:postId`)
+- Responsive layout (desktop sidebar and mobile navigation)
 
-**Not included:** chat/DMs, AI captions, ads, recommendations, or a live production deployment.
+### Learning Features
+
+- Learning plans with topics and resources (“Craft” in the UI)
+- Learning progress notes
+- Owner-scoped access for plan details
+
+**Honest scope notes:** Google OAuth has a working local code path (backend OAuth2 client + frontend callback) but is not production-configured. Stories and reels are thinner than posts (for example, reels lack likes/comments in the UI). There is no hosted live demo.
 
 ---
 
-## Tech stack
+## Tech Stack
 
-| Layer | Technology |
+| Layer | Technologies |
 |---|---|
-| Frontend | React 18, Redux + Thunk, React Router 6, Tailwind CSS, Chakra UI, Ant Design, Formik + Yup |
-| Backend | Java 17, Spring Boot 3.0.2, Spring Security, Spring Data JPA, jjwt, Maven Wrapper |
-| Database | MySQL 8 — database name `nightlife` |
-| Authentication | BCrypt passwords, `GET /signin` (HTTP Basic → JWT), optional Google OAuth2 client |
-| Media | Unsigned Cloudinary upload in the browser; API stores returned URLs |
+| **Frontend** | React 18, Redux + Thunk, React Router 6, Axios, Chakra UI, Ant Design, Tailwind CSS, Formik / Yup |
+| **Backend** | Java 17, Spring Boot 3.0.2, Spring Security, JWT (jjwt), Spring Data JPA, Bean Validation, Maven Wrapper |
+| **Database / media** | MySQL 8, Cloudinary (browser unsigned upload) |
+| **Testing** | JUnit 5, Spring Boot Test, MockMvc / Mockito (backend) |
 
-**Local ports**
-
-| Layer | URL / port |
+| Local service | Default |
 |---|---|
 | Frontend | `http://localhost:3000` |
 | Backend API | `http://localhost:5454` |
-| MySQL (XAMPP in this project) | `localhost:3308` |
-| Database name | `nightlife` |
+| MySQL (XAMPP in this project) | `localhost:3308`, database `nightlife` |
 
 ---
 
 ## Architecture
 
 ```
-Browser (React, :3000)
-    |  JWT in Authorization header
-    v
+React client (:3000)
+        │  REST + JWT
+        ▼
 Spring Boot API (:5454)
-    |  JPA
-    v
-MySQL  nightlife @ :3308
-
-Browser
-    |  unsigned upload
-    v
-Cloudinary  -->  URLs stored on posts / stories / reels / avatars
+        │  Spring Data JPA
+        ▼
+MySQL (nightlife)
 ```
 
-The API does not store binary files.
+Media is handled separately: the browser uploads files to Cloudinary using unsigned presets; the API persists only the resulting URLs on posts, stories, reels, and avatars.
 
 ---
 
-## Project structure
+## Security & Engineering Practices
+
+- JWT-based API authentication after login
+- Route protection and session cleanup on `401` in the client
+- Server-side ownership / authorization checks returning `403` where appropriate
+- `PublicUserDto` on public user endpoints to avoid leaking private collections such as saved posts
+- Environment-based secrets (`JWT_SECRET`, DB credentials, OAuth client values, Cloudinary config)
+- `.env` files gitignored; `.env.example` files document names and placeholders only
+- Input validation (e.g. signup) and centralized exception handling
+- Automated backend tests for critical auth and ownership behaviors
+
+---
+
+## Testing
+
+Backend suite (isolated; does not require a live MySQL instance for the active tests):
+
+```powershell
+cd NIGHTLIFE
+.\mvnw.cmd test
+```
+
+Covered behaviors:
+
+| Area | What is verified |
+|---|---|
+| Signup validation | Invalid registration input is rejected |
+| Login | Invalid credentials return **401** |
+| Comment ownership | Non-owners cannot mutate comments (**403**) |
+| Learning-plan ownership | Non-owners cannot access another user’s plan by id (**403**) |
+| Public user privacy | Public user JSON does not expose `savedPost` |
+
+The Spring context-load smoke test (`CookingHubApplicationTests`) is **`@Disabled`** because it requires a live MySQL instance on `localhost:3308`. That skip is infrastructure-related, not an application-logic failure.
+
+There is no meaningful frontend automated test suite. Compile check:
+
+```powershell
+cd NIGHTLIFE
+.\mvnw.cmd -DskipTests compile
+```
+
+---
+
+## Project Structure
 
 ```
 NightPhotography/
-├── README.md
+├── client/                  # React frontend (Create React App)
+├── NIGHTLIFE/               # Spring Boot backend (Maven)
+├── docs/                    # Project documentation
 ├── .gitignore
-├── client/                      React (Create React App)
-│   ├── public/
-│   ├── src/
-│   │   ├── Config/              API URL, auth, Cloudinary, media
-│   │   ├── Redux/               posts, comments, users, stories, reels,
-│   │   │                        notifications, craft, progress
-│   │   ├── Pages/               Home, Explore, Profile, Auth, Reels, Story,
-│   │   │                        Craft, Progress, About
-│   │   ├── Components/          posts, comments, navigation, notifications
-│   │   └── styles/
-│   └── .env.example
-├── NIGHTLIFE/                   Spring Boot API
-│   ├── pom.xml
-│   ├── .mvn/wrapper/
-│   ├── .env.example
-│   └── src/
-│       ├── main/java/com/zos/
-│       │   ├── config/          Security, JWT filters, CORS, OAuth handler
-│       │   ├── controller/      REST endpoints
-│       │   ├── services/        Business rules and ownership
-│       │   ├── model/           JPA entities
-│       │   ├── repository/
-│       │   ├── dto/
-│       │   ├── security/
-│       │   └── exception/
-│       ├── main/resources/      application.properties (env placeholders)
-│       └── test/java/           Isolated MockMvc / Mockito tests
-└── docs/screenshots/            Portfolio UI screenshots
+└── README.md
 ```
 
-Routing: `client/src/Pages/Router/Routers.jsx`.  
-API base URL: `REACT_APP_API_URL` (local default `http://localhost:5454`).
+- **`client/`** — UI, Redux store, routing, Cloudinary upload helpers, and API calls to the backend.
+- **`NIGHTLIFE/`** — REST controllers, services, JPA models, security filters, optional local demo seeding, and tests.
+- **`docs/`** — Supporting documentation (including screenshot notes).
 
 ---
 
-## Authentication and security
+## Screenshots
 
-**What exists**
+Selected UI screenshots are maintained separately as portfolio documentation. Repository screenshot assets are intentionally excluded from the source repository to keep the codebase focused.
 
-- Passwords hashed with BCrypt; password is not serialized on user JSON
-- Login via `GET /signin` (HTTP Basic) issues a JWT (`jwt.expiration`, default 24 hours)
-- Most `/api/**` routes require authentication
-- Owner checks: post edit/delete, comment edit/delete (**403**), notification read/delete (**403**), reel delete, Craft writes, learning-plan GET by id (**403** for non-owners)
-- Public user responses (`GET /api/users/username/{username}`, search, batch, popular) use `PublicUserDto` and **do not** include `savedPost`
-- `GET /api/users/req` still returns the **current user’s** `savedPost` so Profile → Saved works
-- Frontend `handleUnauthorized` clears a stale token and returns to `/login`
-- Secrets belong in local `.env` files (`JWT_SECRET` is required at runtime)
-
-**Limitations**
-
-- HTTP Basic is the email/password login mechanism
-- CSRF is disabled (JWT API)
-- Google OAuth is optional and not production-hardened (JWT may appear in the redirect URL hash)
-- Public profile JSON can still include email/mobile
-- No rate limiting
-- Hibernate `ddl-auto=update` (no Flyway/Liquibase)
-- Spring Boot **3.0.2** as in this repo (not the latest)
-
-Never commit real JWT secrets, database passwords, OAuth client secrets, or Cloudinary API secrets. Unsigned Cloudinary **presets** are public upload names, not API keys.
+See [docs/screenshots/README.md](docs/screenshots/README.md) for expected capture names if you add local screenshots for your own portfolio materials.
 
 ---
 
-## Database
+## Local Development
 
-MySQL **`nightlife`** on **`localhost:3308`**.
+Prerequisites: **Node.js**, **Java 17+**, **MySQL** (this project uses XAMPP MySQL on port **3308**), and a Cloudinary cloud with unsigned upload presets for local media uploads.
 
-Entities: users, posts (media URL collections), comments, notifications, stories, reels, learning plans (plan → topics → resources), progress notes. Followers and likes are stored as embedded user snapshots.
+### 1. Database
 
----
-
-## Media storage
-
-The client uploads images and video with unsigned Cloudinary presets (`REACT_APP_CLOUDINARY_*` in `client/.env`). There are no hardcoded Cloudinary fallbacks in source. The backend stores the returned URLs.
-
----
-
-## API overview
-
-| Method | Path | Role |
-|---|---|---|
-| `POST` | `/signup` | Register |
-| `GET` | `/signin` | Login (Basic → JWT header) |
-| `GET` | `/oauth-user` | OAuth session → JWT |
-| `GET` | `/api` | Health / welcome |
-
-Authenticated groups (JWT):
-
-| Base path | Purpose |
-|---|---|
-| `/api/users` | Current user, profiles, follow, search, account edit |
-| `/api/posts` | CRUD, following feed, like, save |
-| `/api/comments` | Create, like, edit, delete, list by post |
-| `/api/notifications` | List, unread, mark read, delete |
-| `/api/stories` | Create, list by user |
-| `/api/reels` | Create, list, delete |
-| `/api/learning_plan` | Craft plans, topics, resources |
-| `/api/progress` | Progress notes |
-
-OAuth browser start (if Google credentials are configured): `{API}/oauth2/authorization/google`.
-
----
-
-## Local setup
-
-### Prerequisites
-
-- Node.js 18+ (CRA 5)
-- JDK 17
-- XAMPP MySQL on **3308** (not 3306)
-- Database `nightlife` created
-- Cloudinary unsigned upload presets (to publish media)
-- Optional: Google OAuth client for the Google button
-
-### 1. MySQL
-
-1. Start MySQL in XAMPP on port **3308**.
-2. Create database `nightlife`.
-3. Default example user is `root` with an empty password — override in `.env` if yours differs.
+Create a MySQL database named `nightlife` and ensure the server is reachable at the host/port you configure (default `localhost:3308`).
 
 ### 2. Backend
 
-```bash
+```powershell
 cd NIGHTLIFE
 copy .env.example .env
-```
-
-Set at least `JWT_SECRET` (32+ characters) in `NIGHTLIFE/.env`. Then:
-
-```bash
+# Set JWT_SECRET (32+ characters), DB_PASSWORD, and other values in .env — never commit .env
 .\mvnw.cmd spring-boot:run
 ```
 
@@ -228,79 +180,40 @@ API: [http://localhost:5454](http://localhost:5454)
 
 ### 3. Frontend
 
-```bash
+```powershell
 cd client
 copy .env.example .env
+# Set REACT_APP_API_URL and Cloudinary variables — never commit .env
 npm install
 npm start
 ```
 
 App: [http://localhost:3000](http://localhost:3000)
 
-Put Cloudinary values only in the local `.env`, not in git.
-
-Do not run `npm run build` while `npm start` is already using webpack.
-
-### Optional: local demo dataset (development only)
-
-**Not required for normal use.** Sign up with your own accounts for day-to-day development. Demo seeding is an **opt-in local development** helper for portfolio screenshots and local walkthroughs. It never runs unless you explicitly enable it.
-
-Defaults (both **false**):
-
-| Flag / env | Default | Purpose |
-|---|---|---|
-| `nightlife.demo-data.enabled` / `NIGHTLIFE_DEMO_DATA` | `false` | Seed fictional `@nightlife.demo` users and posts once |
-| `nightlife.demo-data.refresh-media` / `NIGHTLIFE_DEMO_REFRESH_MEDIA` | `false` | Refresh curated media URLs for existing demo accounts only |
-
-To seed **once** on a local machine (MySQL running, API otherwise able to start):
-
-```bash
-cd NIGHTLIFE
-.\mvnw.cmd spring-boot:run "-Dspring-boot.run.arguments=--nightlife.demo-data.enabled=true"
-```
-
-Or set `NIGHTLIFE_DEMO_DATA=true` in your **local** process environment (same place as `JWT_SECRET`), then start the API. After `Demo seed complete` appears in the logs, turn the flag back off so later restarts do not re-run the seeder.
-
-The seeder is **idempotent**: if `neonaria@nightlife.demo` already exists, it skips.
-
-**Local demo credentials only** (not production accounts):
-
-| Field | Value |
-|---|---|
-| Email pattern | `*@nightlife.demo` (e.g. `neonaria@nightlife.demo`) |
-| Password | `DemoNight1!` |
-
-Media URLs are public Unsplash / sample video links. Nothing is uploaded to Cloudinary by the seeder.
-
-To refresh demo image/video URLs without wiping likes, comments, or follows:
-
-```bash
-cd NIGHTLIFE
-.\mvnw.cmd spring-boot:run "-Dspring-boot.run.arguments=--nightlife.demo-data.refresh-media=true"
-```
-
-Turn that flag off again after `Demo media refresh complete`.
+Do not run `npm run build` while `npm start` is already using the webpack dev server.
 
 ---
 
-## Environment variables
+## Environment Variables
 
-Copy `client/.env.example` and `NIGHTLIFE/.env.example`. Real values stay in **local** `.env` files (gitignored). Do not commit secrets.
+Copy from the `.env.example` files. Real values stay in **local** `.env` files (gitignored).
 
-**Frontend**
+### Frontend (`client/.env`)
 
-| Variable | Local example |
+| Variable | Example / notes |
 |---|---|
 | `REACT_APP_API_URL` | `http://localhost:5454` |
-| `REACT_APP_CLOUDINARY_CLOUD_NAME` | *(local only)* |
-| `REACT_APP_CLOUDINARY_PRESET_IMAGE` | *(local only)* |
-| `REACT_APP_CLOUDINARY_PRESET_VIDEO` | *(local only)* |
+| `REACT_APP_CLOUDINARY_CLOUD_NAME` | *(local only — required for uploads)* |
+| `REACT_APP_CLOUDINARY_PRESET_IMAGE` | *(unsigned preset name)* |
+| `REACT_APP_CLOUDINARY_PRESET_VIDEO` | *(unsigned preset name)* |
 
-**Backend**
+Google sign-in uses the backend OAuth2 authorization URL (`/oauth2/authorization/google`); configure Google credentials on the **backend**, not as frontend secrets.
 
-| Variable | Local example |
+### Backend (`NIGHTLIFE/.env`)
+
+| Variable | Example / notes |
 |---|---|
-| `JWT_SECRET` | *(required, local only)* |
+| `JWT_SECRET` | *(required, local only — 32+ characters)* |
 | `JWT_EXPIRATION` | `86400000` |
 | `DB_HOST` | `localhost` |
 | `DB_PORT` | `3308` |
@@ -309,100 +222,80 @@ Copy `client/.env.example` and `NIGHTLIFE/.env.example`. Real values stay in **l
 | `DB_PASSWORD` | *(local only)* |
 | `SERVER_PORT` | `5454` |
 | `FRONTEND_URL` | `http://localhost:3000` |
-| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | *(optional, local only)* |
-| `NIGHTLIFE_DEMO_DATA` | `false` (default; local opt-in only) |
-| `NIGHTLIFE_DEMO_REFRESH_MEDIA` | `false` (default; local opt-in only) |
+| `GOOGLE_CLIENT_ID` | *(optional, local OAuth)* |
+| `GOOGLE_CLIENT_SECRET` | *(optional, local OAuth)* |
+| `NIGHTLIFE_DEMO_DATA` | `false` (default) |
+| `NIGHTLIFE_DEMO_REFRESH_MEDIA` | `false` (default) |
+
+Never commit JWT secrets, database passwords, OAuth client secrets, or Cloudinary API secrets. Unsigned upload presets are public upload names, not API keys.
 
 ---
 
-## Testing
+## Development Demo Data
 
-Isolated backend tests (no live MySQL required):
+Optional **local development** seeding is available and **disabled by default**.
 
-```bash
+| Flag | Default | Purpose |
+|---|---|---|
+| `NIGHTLIFE_DEMO_DATA` / `nightlife.demo-data.enabled` | `false` | Seed fictional `@nightlife.demo` users and sample content once |
+| `NIGHTLIFE_DEMO_REFRESH_MEDIA` / `nightlife.demo-data.refresh-media` | `false` | Refresh curated media URLs for existing demo accounts only |
+
+Enable once from PowerShell if needed:
+
+```powershell
 cd NIGHTLIFE
-.\mvnw.cmd test
+.\mvnw.cmd spring-boot:run "-Dspring-boot.run.arguments=--nightlife.demo-data.enabled=true"
 ```
 
-**Latest result:** `BUILD SUCCESS` — **8 passed, 0 failed, 1 skipped**
+After `Demo seed complete` appears in the logs, turn the flag off again. The seeder is idempotent if `neonaria@nightlife.demo` already exists.
 
-The skipped test is the Spring context-load smoke test (`CookingHubApplicationTests`). It needs a running MySQL instance on `localhost:3308`. A skip or failure there is infrastructure, not an application logic failure.
+**Development-only demo credential — never use in production.**
 
-Backend compile:
-
-```bash
-cd NIGHTLIFE
-.\mvnw.cmd -DskipTests compile
-```
-
-**Latest result:** `BUILD SUCCESS`
-
-The suite covers signup validation, invalid login **401**, comment ownership **403**, public user JSON without `savedPost`, and learning-plan ownership **403**.
-
-Frontend: Create React App is used for development compile/ESLint. There is no meaningful frontend test suite (the default CRA “learn react” test was removed).
-
-Local two-account QA of the core social loop has been exercised in development. There is **no hosted demo**.
-
----
-
-## Screenshots
-
-Portfolio UI captures belong in `docs/screenshots/` with these filenames:
-
-| Screen | File |
+| Field | Value |
 |---|---|
-| Login | `docs/screenshots/01-login.png` |
-| Home feed | `docs/screenshots/02-home.png` |
-| Create post | `docs/screenshots/03-create-post.png` |
-| Explore | `docs/screenshots/04-explore.png` |
-| Profile | `docs/screenshots/05-profile.png` |
-| Post interaction | `docs/screenshots/06-post-interaction.png` |
-| Activity | `docs/screenshots/07-activity.png` |
-| Mobile layout | `docs/screenshots/08-mobile.png` |
+| Accounts | `*@nightlife.demo` (e.g. `neonaria@nightlife.demo`) |
+| Password | `DemoNight1!` |
 
-*Image embeds will be added once those eight PNG files are present in the repository.*
+Normal local use does not require seeding; create your own accounts instead.
 
 ---
 
-## Demo
+## API
 
-- **Live URL:** not deployed — run frontend and backend locally.
-- **Typical walkthrough:** Login → publish a frame → Explore → like / comment / save → follow another user → Activity → open `/p/:postId`.
-- Use your own accounts, or optionally enable the **local development** demo dataset described under [Optional: local demo dataset](#optional-local-demo-dataset-development-only) (defaults remain off).
+The Spring Boot backend exposes REST endpoints for:
 
----
+- Authentication / session-related flows (including sign-in JWT issuance and optional Google OAuth callback support)
+- Users (profile, search, follow)
+- Posts (CRUD, like, save)
+- Comments
+- Notifications
+- Stories and reels
+- Learning plans and learning progress
 
-## Known limitations / future improvements
-
-**Limitations**
-
-- Not deployed; local-only
-- Schema via Hibernate `update`, not versioned migrations
-- Email/password login still uses HTTP Basic
-- Google OAuth is a local code path, not a production provider setup
-- Stories and reels are thinner than posts
-- Create Story UI is less aligned with the Nightlife theme
-- Profile website field is not displayed; avatar “remove photo” is not wired
-- Public profiles may still include email/mobile
-- Small automated test set (8 backend tests); no frontend tests
-- No rate limiting
-
-**Possible later work (not in progress)**
-
-- Hosted deploy with env-based CORS
-- Flyway/Liquibase
-- JSON login instead of HTTP Basic
-- Stronger story/reel parity
-- Notification refresh without a full reload
-
-Do not add chat, AI, or ads for the portfolio scope.
+Most `/api/**` routes require a valid JWT. Exact paths live under `NIGHTLIFE/src/main/java/com/zos/controller/`.
 
 ---
 
-## Author / Developer
+## Known Limitations / Future Improvements
 
-**Chathuni Nimesha** — full-stack software engineering portfolio project (React, Spring Boot, MySQL, JWT, Cloudinary).
+- Not deployed; intended for local run and portfolio review
+- Schema managed with Hibernate `ddl-auto=update` (no Flyway/Liquibase migrations yet)
+- Email/password login uses HTTP Basic to obtain the JWT
+- Google OAuth works as a local integration path, not a production provider setup
+- Stories and reels are less feature-complete than posts
+- Small automated backend suite; no dedicated frontend tests
+- No rate limiting; notifications refresh without a dedicated real-time channel
 
-- GitHub: [github.com/Chathuni-Nimesha](https://github.com/Chathuni-Nimesha)
-- Portfolio: [chathuni-nimesha.github.io](https://chathuni-nimesha.github.io/)
-- Behance: [behance.net/chathuninimesha](https://www.behance.net/chathuninimesha)
+Possible later work: hosted deployment with env-based CORS, versioned migrations, JSON login, stronger story/reel parity, and broader test coverage.
+
+---
+
+## Author
+
+### Chathuni Nimesha
+
+Software Engineer | Full-Stack Developer
+
+- GitHub: [https://github.com/Chathuni-Nimesha](https://github.com/Chathuni-Nimesha)
+- Portfolio: [https://chathuni-nimesha.github.io/](https://chathuni-nimesha.github.io/)
+- Behance: [https://www.behance.net/chathuninimesha](https://www.behance.net/chathuninimesha)
